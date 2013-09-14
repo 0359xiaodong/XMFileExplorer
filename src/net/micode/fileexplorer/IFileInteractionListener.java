@@ -25,6 +25,10 @@ import android.view.View;
 
 import java.util.Collection;
 
+/**
+ * 接口
+ * 职责：定义文件操作中交互的方法
+ * */
 public interface IFileInteractionListener {
 
     public View getViewById(int id);
@@ -46,10 +50,16 @@ public interface IFileInteractionListener {
      */
     public boolean onOperation(int id);
 
+    /**
+     * 作用：返回用于展示的路径名
+     * */
     public String getDisplayPath(String path);
 
     public String getRealPath(String displayPath);
 
+    /**
+     * 作用：在主线程中执行Runnable对象
+     * */
     public void runOnUiThread(Runnable r);
 
     // return true indicates the navigation has been handled

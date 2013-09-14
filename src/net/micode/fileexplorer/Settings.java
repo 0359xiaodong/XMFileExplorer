@@ -19,6 +19,9 @@
 
 package net.micode.fileexplorer;
 
+/**
+ * 职责：全局设置类，用于设置是否显示系统和缓存中的image，默认为不显示
+ * */
 public class Settings {
     // whether show system and cache images, default not
     private boolean mShowDotAndHiddenFiles;
@@ -35,6 +38,9 @@ public class Settings {
         return mInstance;
     }
 
+    /**
+     * 返回是否显示隐藏和系统图片
+     * */
     public boolean getShowDotAndHiddenFiles() {
         return mShowDotAndHiddenFiles;
     }

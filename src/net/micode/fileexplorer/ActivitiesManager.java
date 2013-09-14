@@ -23,6 +23,9 @@ import java.util.HashMap;
 
 import android.app.Activity;
 
+/**
+ * 职责：全局单例，保存key为：ACTIVITY_FILE_VIEW，ACTIVITY_FILE_CATEGORY，ACTIVITY_TAB的三种Activity 
+ * */
 public class ActivitiesManager {
     public static final String ACTIVITY_FILE_VIEW = "FileView";
 

@@ -80,6 +80,9 @@ public class Util {
         return Environment.getExternalStorageDirectory().getPath();
     }
 
+    /**
+     * 作用：文件只要不是"/mnt/sdcard/.android_secure"，就认为是安全的
+     * */
     public static boolean isNormalFile(String fullName) {
         return !fullName.equals(ANDROID_SECURE);
     }
@@ -101,6 +104,9 @@ public class Util {
         return lFileInfo;
     }
 
+    /**
+     * 通过File获取FileInfo
+     * */
     public static FileInfo GetFileInfo(File f, FilenameFilter filter, boolean showHidden) {
         FileInfo lFileInfo = new FileInfo();
         String filePath = f.getPath();
@@ -256,10 +262,16 @@ public class Util {
         "miren_browser/imagecaches"
     };
 
+    /**
+     * 作用：返回当前path下的文件是否显示
+     * */
     public static boolean shouldShowFile(String path) {
         return shouldShowFile(new File(path));
     }
 
+    /**
+     * 作用：返回当前文件是否显示
+     * */
     public static boolean shouldShowFile(File file) {
         boolean show = Settings.instance().getShowDotAndHiddenFiles();
         if (show)

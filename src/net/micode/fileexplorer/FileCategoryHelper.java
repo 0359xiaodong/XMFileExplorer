@@ -47,6 +47,9 @@ public class FileCategoryHelper {
 
     private static final String LOG_TAG = "FileCategoryHelper";
 
+    /**
+     * 枚举类型：支持的文件类型
+     * */
     public enum FileCategory {
         All, Music, Video, Picture, Theme, Doc, Zip, Apk, Custom, Other, Favorite
     }
@@ -297,6 +300,9 @@ public class FileCategoryHelper {
             return FileCategory.Other;
         }
 
+        /**
+         * 通过ext确定Category
+         * */
         String ext = path.substring(dotPosition + 1);
         if (ext.equalsIgnoreCase(APK_EXT)) {
             return FileCategory.Apk;

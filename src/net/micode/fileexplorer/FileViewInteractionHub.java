@@ -62,17 +62,31 @@ import net.micode.fileexplorer.FileSortHelper.SortMethod;
 import net.micode.fileexplorer.FileViewActivity.SelectFilesCallback;
 import net.micode.fileexplorer.TextInputDialog.OnFinishListener;
 
+/**
+ * 文件视图交互中心类
+ * 职责：
+ * 备注：被FileListAdapter聚合，
+ * */
 public class FileViewInteractionHub implements IOperationProgressListener {
     private static final String LOG_TAG = "FileViewInteractionHub";
 
+    /**
+     * 保存了一个IFileInteractionListener对象：FileViewActivity
+     * */
     private IFileInteractionListener mFileViewListener;
 
+    /**
+     * 选中的文件信息列表
+     * */
     private ArrayList<FileInfo> mCheckedFileNameList = new ArrayList<FileInfo>();
 
     private FileOperationHelper mFileOperationHelper;
 
     private FileSortHelper mFileSortHelper;
 
+    /**
+     * 确认ActionBar，应该是一个对话框
+     * */
     private View mConfirmOperationBar;
 
     private ProgressDialog progressDialog;
@@ -87,6 +101,9 @@ public class FileViewInteractionHub implements IOperationProgressListener {
 
     private Context mContext;
 
+    /**
+     * 采用了状态模式：View，Pick
+     * */
     public enum Mode {
         View, Pick
     };
@@ -159,6 +176,9 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         });
     }
 
+    /**
+     * 返回当前pos的文件列表信息FileInfo
+     * */
     public FileInfo getItem(int pos) {
         return mFileViewListener.getItem(pos);
     }
@@ -474,8 +494,13 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         refreshFileList();
     }
 
+    /**
+     * 作用：刷新文件信息列表 1.清空文件选中 2.设置导航的图标和路径名 3.刷新当前目录下的文件列表信息 4.设定confirmButton的text
+     * */
     public void refreshFileList() {
-        clearSelection();
+        // 清空选中的文件信息
+    	clearSelection(); 
+    	// 设置图标和路径名
         updateNavigationPane();
 
         // onRefreshFileList returns true indicates list has changed
@@ -486,6 +511,9 @@ public class FileViewInteractionHub implements IOperationProgressListener {
 
     }
 
+    /**
+     * 作用：根据不同的情景设定ConfirmButton的text
+     * */
     private void updateConfirmButtons() {
         if (mConfirmOperationBar.getVisibility() == View.GONE)
             return;
@@ -502,13 +530,20 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         confirmButton.setText(text);
     }
 
+    /**
+     * 作用：1.设置当前部分图标是否可见 2.设置当前路径名
+     * */
     private void updateNavigationPane() {
-        View upLevel = mFileViewListener.getViewById(R.id.path_pane_up_level);
-        upLevel.setVisibility(mRoot.equals(mCurrentPath) ? View.INVISIBLE : View.VISIBLE);
-
+    	/**
+    	 * 注意：FileViewActivity实现了mFileViewListener
+    	 * */
+        // 往上一级的icon，如果是根目录就设置为不可见
+    	View upLevel = mFileViewListener.getViewById(R.id.path_pane_up_level);
+    	upLevel.setVisibility(mRoot.equals(mCurrentPath) ? View.INVISIBLE : View.VISIBLE);
+    	// 指向下的箭头icon，如果是根目录就设置为不可见
         View arrow = mFileViewListener.getViewById(R.id.path_pane_arrow);
         arrow.setVisibility(mRoot.equals(mCurrentPath) ? View.GONE : View.VISIBLE);
-
+        // 设置路径名
         mNavigationBarText.setText(mFileViewListener.getDisplayPath(mCurrentPath));
     }
 
@@ -1034,10 +1069,13 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         return mCheckedFileNameList.size() != 0;
     }
 
+    /**
+     * 作用：清除选中的文件信息
+     * */
     public void clearSelection() {
         if (mCheckedFileNameList.size() > 0) {
             for (FileInfo f : mCheckedFileNameList) {
-                if (f == null) {
+                if (f == null) { // 有必要再判断一下吗？
                     continue;
                 }
                 f.Selected = false;

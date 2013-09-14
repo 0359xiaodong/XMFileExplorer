@@ -33,6 +33,9 @@ public class FileIconHelper implements IconLoadFinishListener {
 
     private static final String LOG_TAG = "FileIconHelper";
 
+    /**
+     * ImageView和对应的framesImageView
+     * */
     private static HashMap<ImageView, ImageView> imageFrames = new HashMap<ImageView, ImageView>();
 
     private static HashMap<String, Integer> fileExtToIcons = new HashMap<String, Integer>();
@@ -100,16 +103,22 @@ public class FileIconHelper implements IconLoadFinishListener {
 
     }
 
+    /**
+     * 加载图片
+     * */
     public void setIcon(FileInfo fileInfo, ImageView fileImage, ImageView fileImageFrame) {
         String filePath = fileInfo.filePath;
         long fileId = fileInfo.dbId;
         String extFromFilename = Util.getExtFromFilename(filePath);
         FileCategory fc = FileCategoryHelper.getCategoryFromPath(filePath);
         fileImageFrame.setVisibility(View.GONE);
+        // 加载成功标志变量
         boolean set = false;
-        int id = getFileIcon(extFromFilename);
-        fileImage.setImageResource(id);
-
+        int resId = getFileIcon(extFromFilename);
+        fileImage.setImageResource(resId);
+        /**
+         * 在mPendingRequests中移除fileImage，这么做是为了避免无谓的后台加载，因为设为了默认的resId，还没有加载的必要
+         * */
         mIconLoader.cancelRequest(fileImage);
         switch (fc) {
             case Apk:
@@ -137,11 +146,11 @@ public class FileIconHelper implements IconLoadFinishListener {
     }
 
     @Override
-    public void onIconLoadFinished(ImageView view) {
-        ImageView frame = imageFrames.get(view);
+    public void onIconLoadFinished(ImageView image) {
+        ImageView frame = imageFrames.get(image);
         if (frame != null) {
             frame.setVisibility(View.VISIBLE);
-            imageFrames.remove(view);
+            imageFrames.remove(image);
         }
     }
 

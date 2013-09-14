@@ -27,6 +27,9 @@ import android.widget.ArrayAdapter;
 
 import java.util.List;
 
+/**
+ * 职责：文件列表Adapter，绑定FileInfo到Adapter
+ * */
 public class FileListAdapter extends ArrayAdapter<FileInfo> {
     private LayoutInflater mInflater;
 
@@ -40,7 +43,8 @@ public class FileListAdapter extends ArrayAdapter<FileInfo> {
             List<FileInfo> objects, FileViewInteractionHub f,
             FileIconHelper fileIcon) {
         super(context, resource, objects);
-        mInflater = LayoutInflater.from(context);
+        // 获取LayoutInflater实例
+        mInflater = LayoutInflater.from(context); 
         mFileViewInteractionHub = f;
         mFileIcon = fileIcon;
         mContext = context;
@@ -54,10 +58,12 @@ public class FileListAdapter extends ArrayAdapter<FileInfo> {
         } else {
             view = mInflater.inflate(R.layout.file_browser_item, parent, false);
         }
-
+        // 从FileViewInteractionHub取得FileInfo
         FileInfo lFileInfo = mFileViewInteractionHub.getItem(position);
+        // 填充item
         FileListItem.setupFileListItemInfo(mContext, view, lFileInfo,
                 mFileIcon, mFileViewInteractionHub);
+        // 为checkbox这个imageView所在FrameLayout设定点击监听 TODO
         view.findViewById(R.id.file_checkbox_area).setOnClickListener(
                 new FileListItem.FileItemOnClickListener(mContext,
                         mFileViewInteractionHub));

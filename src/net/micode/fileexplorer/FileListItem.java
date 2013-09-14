@@ -32,8 +32,14 @@ import android.widget.ImageView;
 
 import net.micode.fileexplorer.FileViewInteractionHub.Mode;
 
+/**
+ * 职责：这个类是被重构过来的，集中处理item绑定的操作
+ * */
 public class FileListItem {
-    public static void setupFileListItemInfo(Context context, View view,
+	/**
+	 * 这个方法是被重构过来的，用来设定item中的views
+	 * */
+    public static void setupFileListItemInfo(Context context, View item,
             FileInfo fileInfo, FileIconHelper fileIcon,
             FileViewInteractionHub fileViewInteractionHub) {
 
@@ -41,30 +47,42 @@ public class FileListItem {
         if (fileViewInteractionHub.isMoveState()) {
             fileInfo.Selected = fileViewInteractionHub.isFileSelected(fileInfo.filePath);
         }
-
-        ImageView checkbox = (ImageView) view.findViewById(R.id.file_checkbox);
+        /**
+         * item中的checkbox用的是ImageView
+         * */ 
+        ImageView checkbox = (ImageView) item.findViewById(R.id.file_checkbox);
         if (fileViewInteractionHub.getMode() == Mode.Pick) {
             checkbox.setVisibility(View.GONE);
         } else {
             checkbox.setVisibility(fileViewInteractionHub.canShowCheckBox() ? View.VISIBLE : View.GONE);
+            // 根据fileInfo.Selected设定Img
             checkbox.setImageResource(fileInfo.Selected ? R.drawable.btn_check_on_holo_light
                     : R.drawable.btn_check_off_holo_light);
             checkbox.setTag(fileInfo);
-            view.setSelected(fileInfo.Selected);
+            // 将这个item设置为选中
+            item.setSelected(fileInfo.Selected);
         }
 
-        Util.setText(view, R.id.file_name, fileInfo.fileName);
-        Util.setText(view, R.id.file_count, fileInfo.IsDir ? "(" + fileInfo.Count + ")" : "");
-        Util.setText(view, R.id.modified_time, Util.formatDateString(context, fileInfo.ModifiedDate));
-        Util.setText(view, R.id.file_size, (fileInfo.IsDir ? "" : Util.convertStorage(fileInfo.fileSize)));
+        /**
+         * 设定item中的textView
+         * */
+        Util.setText(item, R.id.file_name, fileInfo.fileName);
+        Util.setText(item, R.id.file_count, fileInfo.IsDir ? "(" + fileInfo.Count + ")" : "");
+        Util.setText(item, R.id.modified_time, Util.formatDateString(context, fileInfo.ModifiedDate));
+        Util.setText(item, R.id.file_size, (fileInfo.IsDir ? "" : Util.convertStorage(fileInfo.fileSize)));
 
-        ImageView lFileImage = (ImageView) view.findViewById(R.id.file_image);
-        ImageView lFileImageFrame = (ImageView) view.findViewById(R.id.file_image_frame);
+        /**
+         * 采用的是FrameLayout来组织lFileImage和lFileImageFrame
+         * */
+        ImageView lFileImage = (ImageView) item.findViewById(R.id.file_image);
+        ImageView lFileImageFrame = (ImageView) item.findViewById(R.id.file_image_frame);
 
         if (fileInfo.IsDir) {
+        	// 目录则隐藏lFileImageFrame
             lFileImageFrame.setVisibility(View.GONE);
             lFileImage.setImageResource(R.drawable.folder);
         } else {
+        	// 否则根据实际情况用FileIconHelper加载icon
             fileIcon.setIcon(fileInfo, lFileImage, lFileImageFrame);
         }
     }
@@ -83,9 +101,11 @@ public class FileListItem {
         public void onClick(View v) {
             ImageView img = (ImageView) v.findViewById(R.id.file_checkbox);
             assert (img != null && img.getTag() != null);
-
+            // 得到FileInfo
             FileInfo tag = (FileInfo) img.getTag();
+            // 取个反
             tag.Selected = !tag.Selected;
+            // TODO
             ActionMode actionMode = ((FileExplorerTabActivity) mContext).getActionMode();
             if (actionMode == null) {
                 actionMode = ((FileExplorerTabActivity) mContext)
