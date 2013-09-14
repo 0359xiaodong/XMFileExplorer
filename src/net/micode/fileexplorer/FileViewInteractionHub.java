@@ -19,12 +19,10 @@
 
 package net.micode.fileexplorer;
 
-import net.micode.fileexplorer.FileListItem.ModeCallback;
-import net.micode.fileexplorer.FileOperationHelper.IOperationProgressListener;
-import net.micode.fileexplorer.FileSortHelper.SortMethod;
-import net.micode.fileexplorer.FileViewActivity.SelectFilesCallback;
-import net.micode.fileexplorer.TextInputDialog.OnFinishListener;
+import java.io.File;
+import java.util.ArrayList;
 
+import android.R.drawable;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -37,9 +35,9 @@ import android.net.Uri;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
-import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -58,12 +56,12 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
-import java.util.ArrayList;
+import net.micode.fileexplorer.FileListItem.ModeCallback;
+import net.micode.fileexplorer.FileOperationHelper.IOperationProgressListener;
+import net.micode.fileexplorer.FileSortHelper.SortMethod;
+import net.micode.fileexplorer.FileViewActivity.SelectFilesCallback;
+import net.micode.fileexplorer.TextInputDialog.OnFinishListener;
 
-/**
- * 这货从字面意思上来看是一个FileView的交互中枢，支持各种view的交互操作
- * */
 public class FileViewInteractionHub implements IOperationProgressListener {
     private static final String LOG_TAG = "FileViewInteractionHub";
 
@@ -123,6 +121,18 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         mConfirmOperationBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
+    public void addContextMenuSelectedItem() {
+        if (mCheckedFileNameList.size() == 0) {
+            int pos = mListViewContextMenuSelectedItem;
+            if (pos != -1) {
+                FileInfo fileInfo = mFileViewListener.getItem(pos);
+                if (fileInfo != null) {
+                    mCheckedFileNameList.add(fileInfo);
+                }
+            }
+        }
+    }
+
     public ArrayList<FileInfo> getSelectedFileList() {
         return mCheckedFileNameList;
     }
@@ -179,7 +189,6 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         setupClick(mNavigationBar, R.id.path_pane_up_level);
     }
 
-    // ////////////////////////////////////////////////////////////////////////
     // buttons
     private void setupOperationPane() {
         mConfirmOperationBar = mFileViewListener.getViewById(R.id.moving_operation_bar);
@@ -247,6 +256,17 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         onOperationFavorite(path);
     }
 
+    private void onOperationSetting() {
+        Intent intent = new Intent(mContext, FileExplorerPreferenceActivity.class);
+        if (intent != null) {
+            try {
+                mContext.startActivity(intent);
+            } catch (ActivityNotFoundException e) {
+                Log.e(LOG_TAG, "fail to start setting: " + e.toString());
+            }
+        }
+    }
+
     private void onOperationFavorite(String path) {
         FavoriteDatabaseHelper databaseHelper = FavoriteDatabaseHelper.getInstance();
         if (databaseHelper != null) {
@@ -285,7 +305,7 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         FileExplorerTabActivity fileExplorerTabActivity = (FileExplorerTabActivity) mContext;
         ActionMode mode = fileExplorerTabActivity.getActionMode();
         if (mode == null) {
-            mode = fileExplorerTabActivity.startActionMode(new ModeCallback());
+            mode = fileExplorerTabActivity.startActionMode(new ModeCallback(mContext, this));
             fileExplorerTabActivity.setActionMode(mode);
             Util.updateActionModeTitle(mode, mContext, getSelectedFileList().size());
         }
@@ -302,7 +322,11 @@ public class FileViewInteractionHub implements IOperationProgressListener {
             if (mFileViewListener.onNavigation(path))
                 return;
 
-            mCurrentPath = path;
+            if(path.isEmpty()){
+                mCurrentPath = mRoot;
+            } else{
+                mCurrentPath = path;
+            }
             refreshFileList();
         }
 
@@ -318,7 +342,7 @@ public class FileViewInteractionHub implements IOperationProgressListener {
             String displayPath = mFileViewListener.getDisplayPath(mCurrentPath);
             boolean root = true;
             int left = 0;
-            while (pos != -1) {
+            while (pos != -1 && !displayPath.equals("/")) {//如果当前位置在根文件夹则不显示导航条
                 int end = displayPath.indexOf("/", pos);
                 if (end == -1)
                     break;
@@ -336,6 +360,7 @@ public class FileViewInteractionHub implements IOperationProgressListener {
 
                 TextView text = (TextView) listItem.findViewById(R.id.path_name);
                 String substring = displayPath.substring(pos, end);
+                if(substring.isEmpty())substring = "/";
                 text.setText(substring);
 
                 listItem.setOnClickListener(navigationClick);
@@ -352,10 +377,11 @@ public class FileViewInteractionHub implements IOperationProgressListener {
     public boolean onOperationUpLevel() {
         showDropdownNavigation(false);
 
-        if (mFileViewListener.onOperation(GlobalConsts.OPERATION_UP_LEVEL))
-            return false;
+        if (mFileViewListener.onOperation(GlobalConsts.OPERATION_UP_LEVEL)) {
+            return true;
+        }
 
-        if (!mCurrentPath.equals(mRoot)) {
+        if (!mRoot.equals(mCurrentPath)) {
             mCurrentPath = new File(mCurrentPath).getParent();
             refreshFileList();
             return true;
@@ -478,10 +504,10 @@ public class FileViewInteractionHub implements IOperationProgressListener {
 
     private void updateNavigationPane() {
         View upLevel = mFileViewListener.getViewById(R.id.path_pane_up_level);
-        upLevel.setVisibility(mCurrentPath.equals(mRoot) ? View.INVISIBLE : View.VISIBLE);
+        upLevel.setVisibility(mRoot.equals(mCurrentPath) ? View.INVISIBLE : View.VISIBLE);
 
         View arrow = mFileViewListener.getViewById(R.id.path_pane_arrow);
-        arrow.setVisibility(mCurrentPath.equals(mRoot) ? View.GONE : View.VISIBLE);
+        arrow.setVisibility(mRoot.equals(mCurrentPath) ? View.GONE : View.VISIBLE);
 
         mNavigationBarText.setText(mFileViewListener.getDisplayPath(mCurrentPath));
     }
@@ -643,9 +669,6 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         }
     }
 
-    // ////////////////////////////////////////////////////////////////
-    // file list view
-
     // context menu
     private OnCreateContextMenuListener mListViewContextMenuListener = new OnCreateContextMenuListener() {
         @Override
@@ -683,7 +706,6 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         }
     };
 
-    // //////////////////////////////////////////////////
     // File List view setup
     private ListView mFileListView;
 
@@ -692,7 +714,7 @@ public class FileViewInteractionHub implements IOperationProgressListener {
     private void setupFileListView() {
         mFileListView = (ListView) mFileViewListener.getViewById(R.id.file_path_list);
         mFileListView.setLongClickable(true);
-        mFileListView.setOnCreateContextMenuListener(mListViewContextMenuListener); // 设置上下文菜单
+        mFileListView.setOnCreateContextMenuListener(mListViewContextMenuListener);
         mFileListView.setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -701,7 +723,6 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         });
     }
 
-    // /////////////////////////////////////////////////////////////////////
     // menu
     private static final int MENU_SEARCH = 1;
 
@@ -728,6 +749,10 @@ public class FileViewInteractionHub implements IOperationProgressListener {
 
     private static final int MENU_SELECTALL = 16;
 
+    private static final int MENU_SETTING = 17;
+
+    private static final int MENU_EXIT = 18;
+
     private OnMenuItemClickListener menuItemClick = new OnMenuItemClickListener() {
 
         @Override
@@ -740,15 +765,7 @@ public class FileViewInteractionHub implements IOperationProgressListener {
                 return true;
             }
 
-            if (mCheckedFileNameList.size() == 0) {
-                int pos = mListViewContextMenuSelectedItem;
-                if (pos != -1) {
-                    FileInfo fileInfo = mFileViewListener.getItem(pos);
-                    if (fileInfo != null) {
-                        mCheckedFileNameList.add(fileInfo);
-                    }
-                }
-            }
+            addContextMenuSelectedItem();
 
             switch (itemId) {
                 case MENU_SEARCH:
@@ -768,6 +785,12 @@ public class FileViewInteractionHub implements IOperationProgressListener {
                     break;
                 case GlobalConsts.MENU_FAVORITE:
                     onOperationFavorite();
+                    break;
+                case MENU_SETTING:
+                    onOperationSetting();
+                    break;
+                case MENU_EXIT:
+                    ((FileExplorerTabActivity) mContext).finish();
                     break;
                 // sort
                 case MENU_SORT_NAME:
@@ -818,6 +841,7 @@ public class FileViewInteractionHub implements IOperationProgressListener {
             mListViewContextMenuSelectedItem = -1;
             return true;
         }
+
     };
 
     private net.micode.fileexplorer.FileViewInteractionHub.Mode mCurrentMode;
@@ -857,6 +881,8 @@ public class FileViewInteractionHub implements IOperationProgressListener {
                 R.drawable.ic_menu_show_sys);
         addMenuItem(menu, MENU_REFRESH, 6, R.string.operation_refresh,
                 R.drawable.ic_menu_refresh);
+        addMenuItem(menu, MENU_SETTING, 7, R.string.menu_setting, drawable.ic_menu_preferences);
+        addMenuItem(menu, MENU_EXIT, 8, R.string.menu_exit, drawable.ic_menu_close_clear_cancel);
         return true;
     }
 
@@ -912,9 +938,6 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         return mCurrentMode;
     }
 
-    /**
-     * TODO 继续研究
-     * */
     public void onListItemClick(AdapterView<?> parent, View view, int position, long id) {
         FileInfo lFileInfo = mFileViewListener.getItem(position);
         showDropdownNavigation(false);
@@ -924,8 +947,29 @@ public class FileViewInteractionHub implements IOperationProgressListener {
             return;
         }
 
+        if (isInSelection()) {
+            boolean selected = lFileInfo.Selected;
+            ActionMode actionMode = ((FileExplorerTabActivity) mContext).getActionMode();
+            ImageView checkBox = (ImageView) view.findViewById(R.id.file_checkbox);
+            if (selected) {
+                mCheckedFileNameList.remove(lFileInfo);
+                checkBox.setImageResource(R.drawable.btn_check_off_holo_light);
+            } else {
+                mCheckedFileNameList.add(lFileInfo);
+                checkBox.setImageResource(R.drawable.btn_check_on_holo_light);
+            }
+            if (actionMode != null) {
+                if (mCheckedFileNameList.size() == 0) actionMode.finish();
+                else actionMode.invalidate();
+            }
+            lFileInfo.Selected = !selected;
+
+            Util.updateActionModeTitle(actionMode, mContext, mCheckedFileNameList.size());
+            return;
+        }
+
         if (!lFileInfo.IsDir) {
-            if (mCurrentMode == Mode.Pick) { // 有两种模式
+            if (mCurrentMode == Mode.Pick) {
                 mFileViewListener.onPick(lFileInfo);
             } else {
                 viewFile(lFileInfo);
@@ -984,6 +1028,10 @@ public class FileViewInteractionHub implements IOperationProgressListener {
 
     public boolean isSelectedAll() {
         return mFileViewListener.getItemCount() != 0 && mCheckedFileNameList.size() == mFileViewListener.getItemCount();
+    }
+    
+    public boolean isSelected() {
+        return mCheckedFileNameList.size() != 0;
     }
 
     public void clearSelection() {

@@ -41,7 +41,8 @@
         android:uiOptions="splitActionBarWhenNarrow">
         <activity
             android:name=".FileExplorerTabActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="screenSize|keyboardHidden"
+            android:screenOrientation="sensor"
             android:uiOptions="splitActionBarWhenNarrow">
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
@@ -78,6 +79,13 @@
             <meta-data
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
+        </activity>
+
+        <activity
+            android:label="@string/menu_setting"
+            android:launchMode="singleTop"
+            android:name="FileExplorerPreferenceActivity"
+            android:theme="@android:style/Theme.Holo.Light.NoActionBar" >
         </activity>
 
         <meta-data

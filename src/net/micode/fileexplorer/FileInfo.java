@@ -19,9 +19,6 @@
 
 package net.micode.fileexplorer;
 
-/**
- * 这货是个数据类：很多东西
- * */
 public class FileInfo {
 
     public String fileName;

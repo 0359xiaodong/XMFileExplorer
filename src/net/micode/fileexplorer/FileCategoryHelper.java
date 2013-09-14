@@ -20,13 +20,22 @@
 package net.micode.fileexplorer;
 
 import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.MediaStore.Audio;
+import android.provider.MediaStore.Files;
+import android.provider.MediaStore.Files.FileColumns;
+import android.provider.MediaStore.Images;
+import android.provider.MediaStore.Video;
+import android.util.Log;
+
+import net.micode.fileexplorer.FileSortHelper.SortMethod;
+import net.micode.fileexplorer.MediaFile.MediaFileType;
 
 import java.io.FilenameFilter;
 import java.util.HashMap;
+import java.util.Iterator;
 
-/**
- * 这货完全就是一个帮组类，记录文件的类别信息，帮助文件过滤
- * */
 public class FileCategoryHelper {
     public static final int COLUMN_ID = 0;
 
@@ -42,33 +51,14 @@ public class FileCategoryHelper {
         All, Music, Video, Picture, Theme, Doc, Zip, Apk, Custom, Other, Favorite
     }
 
-    /**
-     * 文件的拓展名
-     * */
     private static String APK_EXT = "apk";
     private static String THEME_EXT = "mtz";
-    private static String[] DOCUMENT_EXTS = new String[] {
-            "doc", "ppt", "docx", "pptx", "xsl", "xslx", "txt", "log", "pdf", "ini", "lrc"
-    };
     private static String[] ZIP_EXTS  = new String[] {
             "zip", "rar"
     };
-    private static String[] VIDEO_EXTS = new String[] {
-            "mp4", "wmv", "mpeg", "m4v", "3gp", "3gpp", "3g2", "3gpp2", "asf"
-    };
 
-    private static String[] PICTURE_EXTS = new String[] {
-            "jpg", "jpeg", "gif", "png", "bmp", "wbmp"
-    };
-
-    /**
-     * 文件过滤器
-     * */
     public static HashMap<FileCategory, FilenameExtFilter> filters = new HashMap<FileCategory, FilenameExtFilter>();
 
-    /**
-     * 文件类别名与字符串资源关联
-     * */
     public static HashMap<FileCategory, Integer> categoryNames = new HashMap<FileCategory, Integer>();
 
     static {
@@ -84,12 +74,18 @@ public class FileCategoryHelper {
         categoryNames.put(FileCategory.Favorite, R.string.category_favorite);
     }
 
+    public static FileCategory[] sCategories = new FileCategory[] {
+            FileCategory.Music, FileCategory.Video, FileCategory.Picture, FileCategory.Theme,
+            FileCategory.Doc, FileCategory.Zip, FileCategory.Apk, FileCategory.Other
+    };
+
     private FileCategory mCategory;
 
     private Context mContext;
 
     public FileCategoryHelper(Context context) {
         mContext = context;
+
         mCategory = FileCategory.All;
     }
 
@@ -105,9 +101,6 @@ public class FileCategoryHelper {
         return categoryNames.get(mCategory);
     }
 
-    /**
-     * 设置Custom文件过滤类别
-     * */
     public void setCustomCategory(String[] exts) {
         mCategory = FileCategory.Custom;
         if (filters.containsKey(FileCategory.Custom)) {
@@ -117,17 +110,11 @@ public class FileCategoryHelper {
         filters.put(FileCategory.Custom, new FilenameExtFilter(exts));
     }
 
-    /**获取过滤器*/
     public FilenameFilter getFilter() {
         return filters.get(mCategory);
     }
 
-    /**
-     * 类别信息（数量，长度）
-     * */
     private HashMap<FileCategory, CategoryInfo> mCategoryInfo = new HashMap<FileCategory, CategoryInfo>();
-
-    // private IContentProvider mMediaProvider;
 
     public HashMap<FileCategory, CategoryInfo> getCategoryInfos() {
         return mCategoryInfo;
@@ -149,45 +136,182 @@ public class FileCategoryHelper {
         public long size;
     }
 
-    /**
-     * 这个类的重点：根据路径，返回该文件属于的类别
-     * */
-    public static FileCategory getCategoryFromPath(String path) {
-        int dotPosition = path.lastIndexOf('.');
-        if (dotPosition == -1)
-            return FileCategory.Other;
+    private void setCategoryInfo(FileCategory fc, long count, long size) {
+        CategoryInfo info = mCategoryInfo.get(fc);
+        if (info == null) {
+            info = new CategoryInfo();
+            mCategoryInfo.put(fc, info);
+        }
+        info.count = count;
+        info.size = size;
+    }
 
-        String ext = path.substring(dotPosition + 1, path.length());
+
+    private String buildDocSelection() {
+        StringBuilder selection = new StringBuilder();
+        Iterator<String> iter = Util.sDocMimeTypesSet.iterator();
+        while(iter.hasNext()) {
+            selection.append("(" + FileColumns.MIME_TYPE + "=='" + iter.next() + "') OR ");
+        }
+        return  selection.substring(0, selection.lastIndexOf(")") + 1);
+    }
+
+    private String buildSelectionByCategory(FileCategory cat) {
+        String selection = null;
+        switch (cat) {
+            case Theme:
+                selection = FileColumns.DATA + " LIKE '%.mtz'";
+                break;
+            case Doc:
+                selection = buildDocSelection();
+                break;
+            case Zip:
+                selection = "(" + FileColumns.MIME_TYPE + " == '" + Util.sZipFileMimeType + "')";
+                break;
+            case Apk:
+                selection = FileColumns.DATA + " LIKE '%.apk'";
+                break;
+            default:
+                selection = null;
+        }
+        return selection;
+    }
+
+    private Uri getContentUriByCategory(FileCategory cat) {
+        Uri uri;
+        String volumeName = "external";
+        switch(cat) {
+            case Theme:
+            case Doc:
+            case Zip:
+            case Apk:
+                uri = Files.getContentUri(volumeName);
+                break;
+            case Music:
+                uri = Audio.Media.getContentUri(volumeName);
+                break;
+            case Video:
+                uri = Video.Media.getContentUri(volumeName);
+                break;
+            case Picture:
+                uri = Images.Media.getContentUri(volumeName);
+                break;
+           default:
+               uri = null;
+        }
+        return uri;
+    }
+
+    private String buildSortOrder(SortMethod sort) {
+        String sortOrder = null;
+        switch (sort) {
+            case name:
+                sortOrder = FileColumns.TITLE + " asc";
+                break;
+            case size:
+                sortOrder = FileColumns.SIZE + " asc";
+                break;
+            case date:
+                sortOrder = FileColumns.DATE_MODIFIED + " desc";
+                break;
+            case type:
+                sortOrder = FileColumns.MIME_TYPE + " asc, " + FileColumns.TITLE + " asc";
+                break;
+        }
+        return sortOrder;
+    }
+
+    public Cursor query(FileCategory fc, SortMethod sort) {
+        Uri uri = getContentUriByCategory(fc);
+        String selection = buildSelectionByCategory(fc);
+        String sortOrder = buildSortOrder(sort);
+
+        if (uri == null) {
+            Log.e(LOG_TAG, "invalid uri, category:" + fc.name());
+            return null;
+        }
+
+        String[] columns = new String[] {
+                FileColumns._ID, FileColumns.DATA, FileColumns.SIZE, FileColumns.DATE_MODIFIED
+        };
+
+        return mContext.getContentResolver().query(uri, columns, selection, null, sortOrder);
+    }
+
+    public void refreshCategoryInfo() {
+        // clear
+        for (FileCategory fc : sCategories) {
+            setCategoryInfo(fc, 0, 0);
+        }
+
+        // query database
+        String volumeName = "external";
+
+        Uri uri = Audio.Media.getContentUri(volumeName);
+        refreshMediaCategory(FileCategory.Music, uri);
+
+        uri = Video.Media.getContentUri(volumeName);
+        refreshMediaCategory(FileCategory.Video, uri);
+
+        uri = Images.Media.getContentUri(volumeName);
+        refreshMediaCategory(FileCategory.Picture, uri);
+
+        uri = Files.getContentUri(volumeName);
+        refreshMediaCategory(FileCategory.Theme, uri);
+        refreshMediaCategory(FileCategory.Doc, uri);
+        refreshMediaCategory(FileCategory.Zip, uri);
+        refreshMediaCategory(FileCategory.Apk, uri);
+    }
+
+    private boolean refreshMediaCategory(FileCategory fc, Uri uri) {
+        String[] columns = new String[] {
+                "COUNT(*)", "SUM(_size)"
+        };
+        Cursor c = mContext.getContentResolver().query(uri, columns, buildSelectionByCategory(fc), null, null);
+        if (c == null) {
+            Log.e(LOG_TAG, "fail to query uri:" + uri);
+            return false;
+        }
+
+        if (c.moveToNext()) {
+            setCategoryInfo(fc, c.getLong(0), c.getLong(1));
+            Log.v(LOG_TAG, "Retrieved " + fc.name() + " info >>> count:" + c.getLong(0) + " size:" + c.getLong(1));
+            c.close();
+            return true;
+        }
+
+        return false;
+    }
+
+    public static FileCategory getCategoryFromPath(String path) {
+        MediaFileType type = MediaFile.getFileType(path);
+        if (type != null) {
+            if (MediaFile.isAudioFileType(type.fileType)) return FileCategory.Music;
+            if (MediaFile.isVideoFileType(type.fileType)) return FileCategory.Video;
+            if (MediaFile.isImageFileType(type.fileType)) return FileCategory.Picture;
+            if (Util.sDocMimeTypesSet.contains(type.mimeType)) return FileCategory.Doc;
+        }
+
+        int dotPosition = path.lastIndexOf('.');
+        if (dotPosition < 0) {
+            return FileCategory.Other;
+        }
+
+        String ext = path.substring(dotPosition + 1);
         if (ext.equalsIgnoreCase(APK_EXT)) {
             return FileCategory.Apk;
         }
-
         if (ext.equalsIgnoreCase(THEME_EXT)) {
             return FileCategory.Theme;
-        }
-
-        if (matchExts(ext, DOCUMENT_EXTS)) {
-            return FileCategory.Doc;
         }
 
         if (matchExts(ext, ZIP_EXTS)) {
             return FileCategory.Zip;
         }
 
-        if (matchExts(ext, VIDEO_EXTS)) {
-            return FileCategory.Video;
-        }
-
-        if (matchExts(ext, PICTURE_EXTS)) {
-            return FileCategory.Picture;
-        }
-
         return FileCategory.Other;
     }
 
-    /**
-     * 判断ext是否存在在定义的exts数组中
-     * */
     private static boolean matchExts(String ext, String[] exts) {
         for (String ex : exts) {
             if (ex.equalsIgnoreCase(ext))

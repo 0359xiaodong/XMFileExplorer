@@ -24,10 +24,6 @@ import java.io.FilenameFilter;
 import java.util.Arrays;
 import java.util.HashSet;
 
-/**
- * 文件过滤器
- * 过滤exts不符合规则的文件,当前文件是目录，则直接通过
- * */
 public class FilenameExtFilter implements FilenameFilter {
 
     private HashSet<String> mExts = new HashSet<String>();

@@ -29,23 +29,14 @@ import android.widget.ImageView;
 
 import java.util.HashMap;
 
-/**
- * 这货可以用来加载Icon
- * */
 public class FileIconHelper implements IconLoadFinishListener {
 
     private static final String LOG_TAG = "FileIconHelper";
 
     private static HashMap<ImageView, ImageView> imageFrames = new HashMap<ImageView, ImageView>();
 
-    /**
-     * ext对应resId
-     * */
     private static HashMap<String, Integer> fileExtToIcons = new HashMap<String, Integer>();
 
-    /**
-     * TODO 这货很强大 暂时不看，可当做第三方jar使用
-     * */
     private FileIconLoader mIconLoader;
 
     static {
@@ -91,9 +82,6 @@ public class FileIconHelper implements IconLoadFinishListener {
         mIconLoader = new FileIconLoader(context, this);
     }
 
-    /**
-     * 为一组exts绑一个resId
-     * */
     private static void addItem(String[] exts, int resId) {
         if (exts != null) {
             for (String ext : exts) {
@@ -112,15 +100,12 @@ public class FileIconHelper implements IconLoadFinishListener {
 
     }
 
-    /**
-     * 根据文件类别设置Icon
-     * */
     public void setIcon(FileInfo fileInfo, ImageView fileImage, ImageView fileImageFrame) {
         String filePath = fileInfo.filePath;
         long fileId = fileInfo.dbId;
         String extFromFilename = Util.getExtFromFilename(filePath);
         FileCategory fc = FileCategoryHelper.getCategoryFromPath(filePath);
-        fileImageFrame.setVisibility(View.GONE); // 背景
+        fileImageFrame.setVisibility(View.GONE);
         boolean set = false;
         int id = getFileIcon(extFromFilename);
         fileImage.setImageResource(id);

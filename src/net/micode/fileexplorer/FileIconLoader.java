@@ -27,7 +27,6 @@ import net.micode.fileexplorer.FileCategoryHelper.FileCategory;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Handler;
@@ -224,14 +223,13 @@ public class FileIconLoader implements Callback {
     }
 
     /**
-	 * 内存缓存中的东西是要可以随时释放掉的 
-	 * Checks if the photo is present in cache. If so, sets
-	 * the photo on the view, otherwise sets the state of the photo to
-	 * {@link BitmapHolder#NEEDED}
-	 */
+     * Checks if the photo is present in cache. If so, sets the photo on the
+     * view, otherwise sets the state of the photo to
+     * {@link BitmapHolder#NEEDED}
+     */
     private boolean loadCachedIcon(ImageView view, String path, FileCategory cate) {
         ImageHolder holder = mImageCache.get(path);
-
+        
         if (holder == null) {
             holder = ImageHolder.create(cate);
             if (holder == null)
@@ -412,7 +410,6 @@ public class FileIconLoader implements Callback {
                 if (holder != null && holder.state == ImageHolder.NEEDED) {
                     // Assuming atomic behavior
                     holder.state = ImageHolder.LOADING;
-
                     switch (id.mCategory) {
                         case Apk:
                             Drawable icon = Util.getApkIcon(mContext, id.mPath);

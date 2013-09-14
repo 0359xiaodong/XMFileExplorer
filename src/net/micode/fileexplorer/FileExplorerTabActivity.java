@@ -18,13 +18,17 @@
  */
 
 package net.micode.fileexplorer;
+
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.ActionMode;
@@ -33,13 +37,9 @@ import java.util.ArrayList;
 
 public class FileExplorerTabActivity extends Activity {
     private static final String INSTANCESTATE_TAB = "tab";
+    private static final int DEFAULT_OFFSCREEN_PAGES = 2;
     ViewPager mViewPager;
-    // ViewPager的Adapter, extends FragmentPagerAdapter
     TabsAdapter mTabsAdapter;
-    
-    /**
-     * 学习ActionBar与ActionMode的结合使用 TODO 
-     * */
     ActionMode mActionMode;
 
     @Override
@@ -48,31 +48,48 @@ public class FileExplorerTabActivity extends Activity {
 
         setContentView(R.layout.fragment_pager);
         mViewPager = (ViewPager) findViewById(R.id.pager);
+        mViewPager.setOffscreenPageLimit(DEFAULT_OFFSCREEN_PAGES);
 
-        /**
-         * 学习ActionBar与PageView结合使用
-         * */
-        
-        // 设置ActionBar
         final ActionBar bar = getActionBar();
-        bar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS); //设置为Tabs导航模式，一系类Tabs
+        bar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         bar.setDisplayOptions(0, ActionBar.DISPLAY_SHOW_TITLE | ActionBar.DISPLAY_SHOW_HOME);
 
         mTabsAdapter = new TabsAdapter(this, mViewPager);
-        
+        mTabsAdapter.addTab(bar.newTab().setText(R.string.tab_category),
+                FileCategoryActivity.class, null);
         mTabsAdapter.addTab(bar.newTab().setText(R.string.tab_sd),
-                FileViewActivity.class, null); // FileViewActivity继承了Fragment
+                FileViewActivity.class, null);
         mTabsAdapter.addTab(bar.newTab().setText(R.string.tab_remote),
                 ServerControlActivity.class, null);
-        if (savedInstanceState != null) {
-            bar.setSelectedNavigationItem(savedInstanceState.getInt(INSTANCESTATE_TAB, 0));
-        }
+        bar.setSelectedNavigationItem(PreferenceManager.getDefaultSharedPreferences(this)
+                .getInt(INSTANCESTATE_TAB, Util.CATEGORY_TAB_INDEX));
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt(INSTANCESTATE_TAB, getActionBar().getSelectedNavigationIndex()); // 保存ActionBar的索引位置
+    protected void onPause() {
+        super.onPause();
+        SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(this).edit();
+        editor.putInt(INSTANCESTATE_TAB, getActionBar().getSelectedNavigationIndex());
+        editor.commit();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        if (getActionBar().getSelectedNavigationIndex() == Util.CATEGORY_TAB_INDEX) {
+            FileCategoryActivity categoryFragement =(FileCategoryActivity) mTabsAdapter.getItem(Util.CATEGORY_TAB_INDEX);
+            if (categoryFragement.isHomePage()) {
+                reInstantiateCategoryTab();
+            } else {
+                categoryFragement.setConfigurationChanged(true);
+            }
+        }
+        super.onConfigurationChanged(newConfig);
+    }
+
+    public void reInstantiateCategoryTab() {
+        mTabsAdapter.destroyItem(mViewPager, Util.CATEGORY_TAB_INDEX,
+                mTabsAdapter.getItem(Util.CATEGORY_TAB_INDEX));
+        mTabsAdapter.instantiateItem(mViewPager, Util.CATEGORY_TAB_INDEX);
     }
 
     @Override
@@ -100,8 +117,11 @@ public class FileExplorerTabActivity extends Activity {
         return mActionMode;
     }
 
+    public Fragment getFragment(int tabIndex) {
+        return mTabsAdapter.getItem(tabIndex);
+    }
+
     /**
-     * 这个类继承了FragmentPagerAdapter，用于将Fragment适配到PageView上,结合了ActionBar和PageView
      * This is a helper class that implements the management of tabs and all
      * details of connecting a ViewPager with associated TabHost.  It relies on a
      * trick.  Normally a tab host has a simple API for supplying a View or
@@ -114,13 +134,7 @@ public class FileExplorerTabActivity extends Activity {
      */
     public static class TabsAdapter extends FragmentPagerAdapter
             implements ActionBar.TabListener, ViewPager.OnPageChangeListener {
-        /**
-         * FragmentPagerAdapter主要是实现从一个Fragment到另一个Fragment的绑定
-         * 实现TabListener，OnPageChangeListener实现ActionBar与PageView的互动
-         * */
-    	
-    	
-    	private final Context mContext;
+        private final Context mContext;
         private final ActionBar mActionBar;
         private final ViewPager mViewPager;
         private final ArrayList<TabInfo> mTabs = new ArrayList<TabInfo>();
@@ -141,18 +155,12 @@ public class FileExplorerTabActivity extends Activity {
             mContext = activity;
             mActionBar = activity.getActionBar();
             mViewPager = pager;
-            // ViewPager在此设置Adapter
             mViewPager.setAdapter(this);
             mViewPager.setOnPageChangeListener(this);
         }
 
-        /**
-         * 添加一个Tab，一个Tab关联上一个Fragment
-         * 保存Class,Bundle,Fragment对象
-         * */
         public void addTab(ActionBar.Tab tab, Class<?> clss, Bundle args) {
             TabInfo info = new TabInfo(clss, args);
-            // 将TabInfo设置到tab
             tab.setTag(info);
             tab.setTabListener(this);
             mTabs.add(info);
@@ -161,27 +169,26 @@ public class FileExplorerTabActivity extends Activity {
         }
 
         @Override
-        public int getCount() { // PageAdapter
+        public int getCount() {
             return mTabs.size();
         }
 
         @Override
-        public Fragment getItem(int position) { // FragmentPageAdapter
+        public Fragment getItem(int position) {
             TabInfo info = mTabs.get(position);
             if (info.fragment == null) {
-            	// 通过context, Fragment类名，Bundles来实例化Fragment
                 info.fragment = Fragment.instantiate(mContext, info.clss.getName(), info.args);
             }
             return info.fragment;
         }
 
         @Override
-        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) { // OnPageChangeListener
+        public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
         }
 
         @Override
-        public void onPageSelected(int position) { // OnPageChangeListener
-            mActionBar.setSelectedNavigationItem(position); // 实现滑动page与ActionBar互动，估计触发onTabSelected
+        public void onPageSelected(int position) {
+            mActionBar.setSelectedNavigationItem(position);
         }
 
         @Override
@@ -189,7 +196,7 @@ public class FileExplorerTabActivity extends Activity {
         }
 
         @Override
-        public void onTabSelected(Tab tab, FragmentTransaction ft) { // TabListener
+        public void onTabSelected(Tab tab, FragmentTransaction ft) {
             Object tag = tab.getTag();
             for (int i=0; i<mTabs.size(); i++) {
                 if (mTabs.get(i) == tag) {

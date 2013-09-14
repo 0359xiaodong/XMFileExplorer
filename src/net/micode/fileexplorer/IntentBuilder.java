@@ -31,118 +31,99 @@ import android.text.TextUtils;
 
 public class IntentBuilder {
 
-	/** 这货用来访问文件 */
-	public static void viewFile(final Context context, final String filePath) {
-		// 得到文件的MIME TYPE
-		
-		/**
-		 * 访问图片资源的步骤
-		 * 1 获取MIME TYPE
-		 * 2 获取URI
-		 * 3 启动intent
-		 * */
-		
-		String type = getMimeType(filePath);
+    public static void viewFile(final Context context, final String filePath) {
+        String type = getMimeType(filePath);
 
-		if (!TextUtils.isEmpty(type) && !TextUtils.equals(type, "*/*")) {
-			/* 设置intent的file与MimeType */
-			Intent intent = new Intent();
-			intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			intent.setAction(android.content.Intent.ACTION_VIEW);
-			// 设置URI和MIME类型
-			intent.setDataAndType(Uri.fromFile(new File(filePath)), type);
-			context.startActivity(intent);
-		} else {
-			// unknown MimeType
-			AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(context);
-			dialogBuilder.setTitle(R.string.dialog_select_type);
+        if (!TextUtils.isEmpty(type) && !TextUtils.equals(type, "*/*")) {
+            /* 设置intent的file与MimeType */
+            Intent intent = new Intent();
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setAction(android.content.Intent.ACTION_VIEW);
+            intent.setDataAndType(Uri.fromFile(new File(filePath)), type);
+            context.startActivity(intent);
+        } else {
+            // unknown MimeType
+            AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(context);
+            dialogBuilder.setTitle(R.string.dialog_select_type);
 
-			CharSequence[] menuItemArray = new CharSequence[] {
-					context.getString(R.string.dialog_type_text),
-					context.getString(R.string.dialog_type_audio),
-					context.getString(R.string.dialog_type_video),
-					context.getString(R.string.dialog_type_image) };
-			dialogBuilder.setItems(menuItemArray,
-					new DialogInterface.OnClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							String selectType = "*/*";
-							switch (which) {
-							case 0:
-								selectType = "text/plain";
-								break;
-							case 1:
-								selectType = "audio/*";
-								break;
-							case 2:
-								selectType = "video/*";
-								break;
-							case 3:
-								selectType = "image/*";
-								break;
-							}
-							Intent intent = new Intent();
-							intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-							intent.setAction(android.content.Intent.ACTION_VIEW);
-							intent.setDataAndType(
-									Uri.fromFile(new File(filePath)),
-									selectType);
-							context.startActivity(intent);
-						}
-					});
-			dialogBuilder.show();
-		}
-	}
+            CharSequence[] menuItemArray = new CharSequence[] {
+                    context.getString(R.string.dialog_type_text),
+                    context.getString(R.string.dialog_type_audio),
+                    context.getString(R.string.dialog_type_video),
+                    context.getString(R.string.dialog_type_image) };
+            dialogBuilder.setItems(menuItemArray,
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            String selectType = "*/*";
+                            switch (which) {
+                            case 0:
+                                selectType = "text/plain";
+                                break;
+                            case 1:
+                                selectType = "audio/*";
+                                break;
+                            case 2:
+                                selectType = "video/*";
+                                break;
+                            case 3:
+                                selectType = "image/*";
+                                break;
+                            }
+                            Intent intent = new Intent();
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            intent.setAction(android.content.Intent.ACTION_VIEW);
+                            intent.setDataAndType(Uri.fromFile(new File(filePath)), selectType);
+                            context.startActivity(intent);
+                        }
+                    });
+            dialogBuilder.show();
+        }
+    }
 
-	public static Intent buildSendFile(ArrayList<FileInfo> files) {
-		ArrayList<Uri> uris = new ArrayList<Uri>();
+    public static Intent buildSendFile(ArrayList<FileInfo> files) {
+        ArrayList<Uri> uris = new ArrayList<Uri>();
 
-		String mimeType = "*/*";
-		for (FileInfo file : files) {
-			if (file.IsDir)
-				continue;
+        String mimeType = "*/*";
+        for (FileInfo file : files) {
+            if (file.IsDir)
+                continue;
 
-			File fileIn = new File(file.filePath);
-			mimeType = getMimeType(file.fileName);
-			Uri u = Uri.fromFile(fileIn);
-			uris.add(u);
-		}
+            File fileIn = new File(file.filePath);
+            mimeType = getMimeType(file.fileName);
+            Uri u = Uri.fromFile(fileIn);
+            uris.add(u);
+        }
 
-		if (uris.size() == 0)
-			return null;
+        if (uris.size() == 0)
+            return null;
 
-		boolean multiple = uris.size() > 1;
-		Intent intent = new Intent(
-				multiple ? android.content.Intent.ACTION_SEND_MULTIPLE
-						: android.content.Intent.ACTION_SEND);
+        boolean multiple = uris.size() > 1;
+        Intent intent = new Intent(multiple ? android.content.Intent.ACTION_SEND_MULTIPLE
+                : android.content.Intent.ACTION_SEND);
 
-		if (multiple) {
-			intent.setType("*/*");
-			intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-		} else {
-			intent.setType(mimeType);
-			intent.putExtra(Intent.EXTRA_STREAM, uris.get(0));
-		}
+        if (multiple) {
+            intent.setType("*/*");
+            intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
+        } else {
+            intent.setType(mimeType);
+            intent.putExtra(Intent.EXTRA_STREAM, uris.get(0));
+        }
 
-		return intent;
-	}
+        return intent;
+    }
 
-	/**
-	 * 通过MimeUtils获取MIME类型
-	 * */
-	private static String getMimeType(String filePath) {
-		int dotPosition = filePath.lastIndexOf('.');
-		if (dotPosition == -1)
-			return "*/*";
+    private static String getMimeType(String filePath) {
+        int dotPosition = filePath.lastIndexOf('.');
+        if (dotPosition == -1)
+            return "*/*";
 
-		String ext = filePath.substring(dotPosition + 1, filePath.length())
-				.toLowerCase();
-		// 获取MIME类型
-		String mimeType = MimeUtils.guessMimeTypeFromExtension(ext);
-		if (ext.equals("mtz")) {
-			mimeType = "application/miui-mtz";
-		}
+        String ext = filePath.substring(dotPosition + 1, filePath.length()).toLowerCase();
+        String mimeType = MimeUtils.guessMimeTypeFromExtension(ext);
+        if (ext.equals("mtz")) {
+            mimeType = "application/miui-mtz";
+        }
 
-		return mimeType != null ? mimeType : "*/*";
-	}
+        return mimeType != null ? mimeType : "*/*";
+    }
 }

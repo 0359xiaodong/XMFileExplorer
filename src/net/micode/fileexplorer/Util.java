@@ -19,16 +19,6 @@
 
 package net.micode.fileexplorer;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -44,6 +34,17 @@ import android.view.ActionMode;
 import android.view.View;
 import android.widget.TextView;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+
 public class Util {
     private static String ANDROID_SECURE = "/mnt/sdcard/.android_secure";
 
@@ -54,12 +55,6 @@ public class Util {
     }
 
     // if path1 contains path2
-    /**
-     * 判断path1是否包含path2
-     * path1 = aaa/bbb/ccc/ddd/eee/
-     * path2 = aaa/bbb/ccc
-     * return true
-     * */
     public static boolean containsPath(String path1, String path2) {
         String path = path2;
         while (path != null) {
@@ -74,9 +69,6 @@ public class Util {
         return false;
     }
 
-    /**
-     * 获得路径，两种合并方法
-     * */
     public static String makePath(String path1, String path2) {
         if (path1.endsWith(File.separator))
             return path1 + path2;
@@ -109,9 +101,6 @@ public class Util {
         return lFileInfo;
     }
 
-    /**
-     * 由File得到FileInfo
-     * */
     public static FileInfo GetFileInfo(File f, FilenameFilter filter, boolean showHidden) {
         FileInfo lFileInfo = new FileInfo();
         String filePath = f.getPath();
@@ -123,7 +112,6 @@ public class Util {
         lFileInfo.ModifiedDate = lFile.lastModified();
         lFileInfo.IsDir = lFile.isDirectory();
         lFileInfo.filePath = filePath;
-        // 记录目录文件数量
         if (lFileInfo.IsDir) {
             int lCount = 0;
             File[] files = lFile.listFiles(filter);
@@ -134,14 +122,14 @@ public class Util {
             }
 
             for (File child : files) {
-                if ((!child.isHidden() || showHidden) // 隐藏文件
+                if ((!child.isHidden() || showHidden)
                         && Util.isNormalFile(child.getAbsolutePath())) {
                     lCount++;
                 }
             }
             lFileInfo.Count = lCount;
 
-        } else { // 设置文件字节数
+        } else {
 
             lFileInfo.fileSize = lFile.length();
 
@@ -149,13 +137,21 @@ public class Util {
         return lFileInfo;
     }
 
-    public static Drawable getApkIcon(Context context, String path) {
+    /*
+     * 采用了新的办法获取APK图标，之前的失败是因为android中存在的一个BUG,通过
+     * appInfo.publicSourceDir = apkPath;来修正这个问题，详情参见:
+     * http://code.google.com/p/android/issues/detail?id=9151
+     */
+    public static Drawable getApkIcon(Context context, String apkPath) {
         PackageManager pm = context.getPackageManager();
-        PackageInfo info = pm.getPackageArchiveInfo(path, PackageManager.GET_ACTIVITIES);
+        PackageInfo info = pm.getPackageArchiveInfo(apkPath,
+                PackageManager.GET_ACTIVITIES);
         if (info != null) {
             ApplicationInfo appInfo = info.applicationInfo;
+            appInfo.sourceDir = apkPath;
+            appInfo.publicSourceDir = apkPath;
             try {
-                return pm.getApplicationIcon(appInfo);
+                return appInfo.loadIcon(pm);
             } catch (OutOfMemoryError e) {
                 Log.e(LOG_TAG, e.toString());
             }
@@ -163,9 +159,6 @@ public class Util {
         return null;
     }
 
-    /**
-     * 获取后缀名
-     * */
     public static String getExtFromFilename(String filename) {
         int dotPosition = filename.lastIndexOf('.');
         if (dotPosition != -1) {
@@ -174,9 +167,6 @@ public class Util {
         return "";
     }
 
-    /**
-     * 获取文件名（不包含文件后缀名）
-     * */
     public static String getNameFromFilename(String filename) {
         int dotPosition = filename.lastIndexOf('.');
         if (dotPosition != -1) {
@@ -202,9 +192,6 @@ public class Util {
     }
 
     // return new file path if successful, or return null
-    /**
-     * 单个非目录文件的拷贝，src拷贝到dest
-     * */
     public static String copyFile(String src, String dest) {
         File file = new File(src);
         if (!file.exists() || file.isDirectory()) {
@@ -214,20 +201,15 @@ public class Util {
         FileInputStream fi = null;
         FileOutputStream fo = null;
         try {
-        	fi = new FileInputStream(file);
+            fi = new FileInputStream(file);
             File destPlace = new File(dest);
-            
-            // 创建目录
             if (!destPlace.exists()) {
                 if (!destPlace.mkdirs())
                     return null;
             }
-            
-            // destPath包含了文件名
+
             String destPath = Util.makePath(dest, file.getName());
             File destFile = new File(destPath);
-            
-            // 文件重名处理
             int i = 1;
             while (destFile.exists()) {
                 String destName = Util.getNameFromFilename(file.getName()) + " " + i++ + "."
@@ -302,6 +284,7 @@ public class Util {
         ArrayList<FavoriteItem> list = new ArrayList<FavoriteItem>();
         list.add(new FavoriteItem(context.getString(R.string.favorite_photo), makePath(getSdDirectory(), "DCIM/Camera")));
         list.add(new FavoriteItem(context.getString(R.string.favorite_sdcard), getSdDirectory()));
+        //list.add(new FavoriteItem(context.getString(R.string.favorite_root), getSdDirectory()));
         list.add(new FavoriteItem(context.getString(R.string.favorite_screen_cap), makePath(getSdDirectory(), "MIUI/screen_cap")));
         list.add(new FavoriteItem(context.getString(R.string.favorite_ringtone), makePath(getSdDirectory(), "MIUI/ringtone")));
         return list;
@@ -417,6 +400,25 @@ public class Util {
     public static void updateActionModeTitle(ActionMode mode, Context context, int selectedNum) {
         if (mode != null) {
             mode.setTitle(context.getString(R.string.multi_select_title,selectedNum));
+            if(selectedNum == 0){
+                mode.finish();
+            }
         }
     }
+
+    public static HashSet<String> sDocMimeTypesSet = new HashSet<String>() {
+        {
+            add("text/plain");
+            add("text/plain");
+            add("application/pdf");
+            add("application/msword");
+            add("application/vnd.ms-excel");
+            add("application/vnd.ms-excel");
+        }
+    };
+
+    public static String sZipFileMimeType = "application/zip";
+
+    public static int CATEGORY_TAB_INDEX = 0;
+    public static int SDCARD_TAB_INDEX = 1;
 }

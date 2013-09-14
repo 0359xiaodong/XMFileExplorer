@@ -19,8 +19,10 @@
 
 package net.micode.fileexplorer;
 
-import net.micode.fileexplorer.FileExplorerTabActivity.IBackPressedListener;
-import net.micode.fileexplorer.FileViewInteractionHub.Mode;
+import java.io.File;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import android.app.Activity;
 import android.app.Fragment;
@@ -41,17 +43,13 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import java.io.File;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
+import net.micode.fileexplorer.FileExplorerTabActivity.IBackPressedListener;
+import net.micode.fileexplorer.FileViewInteractionHub.Mode;
 
-/**
- * 这货就是一个Fragment
- * */
-public class FileViewActivity extends Fragment implements IFileInteractionListener, IBackPressedListener {
+public class FileViewActivity extends Fragment implements
+        IFileInteractionListener, IBackPressedListener {
 
-    public static final String EXT_FILETER_KEY = "ext_filter";
+    public static final String EXT_FILTER_KEY = "ext_filter";
 
     private static final String LOG_TAG = "FileViewActivity";
 
@@ -66,19 +64,10 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
     // private TextView mCurrentPathTextView;
     private ArrayAdapter<FileInfo> mAdapter;
 
-    /**
-     * 这个家伙很重要 TODO
-     * */
     private FileViewInteractionHub mFileViewInteractionHub;
 
-    /**
-     * 记录文件的类别信息，帮助文件过滤
-     * */
     private FileCategoryHelper mFileCagetoryHelper;
 
-    /**
-     * 根据文件类别加载对应的图标
-     * */
     private FileIconHelper mFileIconHelper;
 
     private ArrayList<FileInfo> mFileNameList = new ArrayList<FileInfo>();
@@ -87,11 +76,11 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
 
     private View mRootView;
 
+    private static final String sdDir = Util.getSdDirectory();
+
     // memorize the scroll positions of previous paths
     private ArrayList<PathScrollPositionItem> mScrollPositionList = new ArrayList<PathScrollPositionItem>();
-    // 记录当前路径
     private String mPreviousPath;
-    // media添加或移除广播
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -120,7 +109,6 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
 
         mFileCagetoryHelper = new FileCategoryHelper(mActivity);
         mFileViewInteractionHub = new FileViewInteractionHub(this);
-        
         Intent intent = mActivity.getIntent();
         String action = intent.getAction();
         if (!TextUtils.isEmpty(action)
@@ -129,7 +117,7 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
 
             boolean pickFolder = intent.getBooleanExtra(PICK_FOLDER, false);
             if (!pickFolder) {
-                String[] exts = intent.getStringArrayExtra(EXT_FILETER_KEY);
+                String[] exts = intent.getStringArrayExtra(EXT_FILTER_KEY);
                 if (exts != null) {
                     mFileCagetoryHelper.setCustomCategory(exts);
                 }
@@ -161,32 +149,33 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
 
         mFileListView = (ListView) mRootView.findViewById(R.id.file_path_list);
         mFileIconHelper = new FileIconHelper(mActivity);
-        mAdapter = new FileListAdapter(mActivity, R.layout.file_browse_item, mFileNameList, mFileViewInteractionHub,
+        mAdapter = new FileListAdapter(mActivity, R.layout.file_browser_item, mFileNameList, mFileViewInteractionHub,
                 mFileIconHelper);
 
-        boolean baseSd = intent.getBooleanExtra(GlobalConsts.KEY_BASE_SD, true);
-        final String sdDir = Util.getSdDirectory();
+        boolean baseSd = intent.getBooleanExtra(GlobalConsts.KEY_BASE_SD, !FileExplorerPreferenceActivity.isReadRoot(mActivity));
+        Log.i(LOG_TAG, "baseSd = " + baseSd);
 
         String rootDir = intent.getStringExtra(ROOT_DIRECTORY);
         if (!TextUtils.isEmpty(rootDir)) {
-            if (baseSd && sdDir.startsWith(rootDir)) {
-                rootDir = sdDir;
+            if (baseSd && this.sdDir.startsWith(rootDir)) {
+                rootDir = this.sdDir;
             }
         } else {
-            rootDir = baseSd ? sdDir : GlobalConsts.ROOT_PATH;
+            rootDir = baseSd ? this.sdDir : GlobalConsts.ROOT_PATH;
         }
         mFileViewInteractionHub.setRootPath(rootDir);
 
-        String currentDir = null;
+        String currentDir = FileExplorerPreferenceActivity.getPrimaryFolder(mActivity);
         Uri uri = intent.getData();
         if (uri != null) {
-            if (baseSd && sdDir.startsWith(uri.getPath())) {
-                currentDir = sdDir;
+            if (baseSd && this.sdDir.startsWith(uri.getPath())) {
+                currentDir = this.sdDir;
             } else {
                 currentDir = uri.getPath();
             }
-            mFileViewInteractionHub.setCurrentPath(currentDir);
         }
+        mFileViewInteractionHub.setCurrentPath(currentDir);
+        Log.i(LOG_TAG, "CurrentDir = " + currentDir);
 
         mBackspaceExit = (uri != null)
                 && (TextUtils.isEmpty(action)
@@ -226,7 +215,10 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
 
     @Override
     public boolean onBack() {
-        return !mBackspaceExit && mFileViewInteractionHub.onBackPressed();
+        if (mBackspaceExit || !Util.isSDCardReady() || mFileViewInteractionHub == null) {
+            return false;
+        }
+        return mFileViewInteractionHub.onBackPressed();
     }
 
     private class PathScrollPositionItem {
@@ -257,6 +249,7 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
                 }
             } else {
                 int i;
+                boolean isLast = false;
                 for (i = 0; i < mScrollPositionList.size(); i++) {
                     if (!path.startsWith(mScrollPositionList.get(i).path)) {
                         break;
@@ -277,10 +270,6 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
         mPreviousPath = path;
         return pos;
     }
-    
-    /**
-     * 响应点击事件
-     * */
     public boolean onRefreshFileList(String path, FileSortHelper sort) {
         File file = new File(path);
         if (!file.exists() || !file.isDirectory()) {
@@ -384,34 +373,24 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
         return false;
     }
 
+    //支持显示真实路径
     @Override
     public String getDisplayPath(String path) {
-        String root = mFileViewInteractionHub.getRootPath();
-
-        if (root.equals(path))
-            return getString(R.string.sd_folder);
-
-        if (!root.equals("/")) {
-            int pos = path.indexOf(root);
-            if (pos == 0) {
-                path = path.substring(root.length());
-            }
+        if (path.startsWith(this.sdDir) && !FileExplorerPreferenceActivity.showRealPath(mActivity)) {
+            return getString(R.string.sd_folder) + path.substring(this.sdDir.length());
+        } else {
+            return path;
         }
-
-        return getString(R.string.sd_folder) + path;
     }
 
     @Override
     public String getRealPath(String displayPath) {
-        String root = mFileViewInteractionHub.getRootPath();
-        if (displayPath.equals(getString(R.string.sd_folder)))
-            return root;
-
-        String ret = displayPath.substring(displayPath.indexOf("/"));
-        if (!root.equals("/")) {
-            ret = root + ret;
+        final String perfixName = getString(R.string.sd_folder);
+        if (displayPath.startsWith(perfixName)) {
+            return this.sdDir + displayPath.substring(perfixName.length());
+        } else {
+            return displayPath;
         }
-        return ret;
     }
 
     @Override
@@ -429,7 +408,9 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
     }
 
     public void refresh() {
-        mFileViewInteractionHub.refreshFileList();
+        if (mFileViewInteractionHub != null) {
+            mFileViewInteractionHub.refreshFileList();
+        }
     }
 
     public void moveToFile(ArrayList<FileInfo> files) {
@@ -450,6 +431,15 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
         return mFileIconHelper;
     }
 
+    public boolean setPath(String location) {
+        if (!location.startsWith(mFileViewInteractionHub.getRootPath())) {
+            return false;
+        }
+        mFileViewInteractionHub.setCurrentPath(location);
+        mFileViewInteractionHub.refreshFileList();
+        return true;
+    }
+
     @Override
     public FileInfo getItem(int pos) {
         if (pos < 0 || pos > mFileNameList.size() - 1)
@@ -458,6 +448,7 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
         return mFileNameList.get(pos);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void sortCurrentList(FileSortHelper sort) {
         Collections.sort(mFileNameList, sort.getComparator());
@@ -482,9 +473,6 @@ public class FileViewActivity extends Fragment implements IFileInteractionListen
 
     @Override
     public void runOnUiThread(Runnable r) {
-        /**
-         * TODO 
-         * */
-    	mActivity.runOnUiThread(r);
+        mActivity.runOnUiThread(r);
     }
 }

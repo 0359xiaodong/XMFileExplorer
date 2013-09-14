@@ -7,4 +7,4 @@ proguard.cfg
 project.properties
 .settings/
 .classpath
-# .project
+.project

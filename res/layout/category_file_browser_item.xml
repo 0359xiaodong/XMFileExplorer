@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<net.micode.fileexplorer.FileListItem    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingTop="5dip"
     android:paddingBottom="5dip"
     android:orientation="horizontal"
     android:gravity="center_vertical">
-	
-    <!-- File图标 ：背景+图片-->
-    
+
     <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
@@ -31,10 +30,6 @@
             android:gravity="center"
             android:layout_gravity="center" />
     </FrameLayout>
-    
-    <!-- File图标 end -->
-    
-    <!-- File描述信息由四个TextView组成 -->
     <LinearLayout
         android:id="@+id/file_info_layout"
         android:layout_width="0dip"
@@ -87,11 +82,9 @@
 
         </LinearLayout>
     </LinearLayout>
-	
-    <!-- File描述信息 end  -->
-    
+
     <FrameLayout
-        android:id="@+id/file_checkbox_area"
+        android:id="@+id/category_file_checkbox_area"
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
         android:layout_gravity="center"
@@ -108,4 +101,4 @@
 
     </FrameLayout>
 
-</net.micode.fileexplorer.FileListItem>
+</LinearLayout>

@@ -28,15 +28,9 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
-/**
- * 这货是一个帮助类，支持对文件的拷贝，剪切，删除等操作
- * */
 public class FileOperationHelper {
     private static final String LOG_TAG = "FileOperation";
 
-    /**
-     * 保存文件信息
-     * */
     private ArrayList<FileInfo> mCurFileNameList = new ArrayList<FileInfo>();
 
     private boolean mMoving;
@@ -59,9 +53,6 @@ public class FileOperationHelper {
         mFilter = f;
     }
 
-    /**
-     * 创建一个File
-     * */
     public boolean CreateFolder(String path, String name) {
         Log.v(LOG_TAG, "CreateFolder >>> " + path + "," + name);
 
@@ -72,17 +63,10 @@ public class FileOperationHelper {
         return f.mkdir();
     }
 
-    /**
-     * 添加到mCurFileNameList
-     * */
     public void Copy(ArrayList<FileInfo> files) {
         copyFileList(files);
     }
 
-    /**
-     * 文件的粘贴操作
-     * @param path 需要复制到的文件路径
-     * */
     public boolean Paste(String path) {
         if (mCurFileNameList.size() == 0)
             return false;
@@ -92,13 +76,9 @@ public class FileOperationHelper {
             @Override
             public void run() {
                 for (FileInfo f : mCurFileNameList) {
-                    // 复制文件
-                	CopyFile(f, _path);
+                    CopyFile(f, _path);
                 }
 
-                /**
-                 * 通知系统文件发生变化 TODO
-                 * */
                 mOperationListener.onFileChanged(Environment
                         .getExternalStorageDirectory()
                         .getAbsolutePath());
@@ -126,14 +106,11 @@ public class FileOperationHelper {
         return mMoving;
     }
 
-    /**
-     * 是否能够移动到当前路径
-     * */
     public boolean canMove(String path) {
         for (FileInfo f : mCurFileNameList) {
             if (!f.IsDir)
                 continue;
-            
+
             if (Util.containsPath(f.filePath, path))
                 return false;
         }
@@ -141,18 +118,12 @@ public class FileOperationHelper {
         return true;
     }
 
-    /**
-     * 清空mCurFileNameList
-     * */
     public void clear() {
         synchronized(mCurFileNameList) {
             mCurFileNameList.clear();
         }
     }
 
-    /**
-     * 移动文件，删除原来路径的文件
-     * */
     public boolean EndMove(String path) {
         if (!mMoving)
             return false;
@@ -184,9 +155,6 @@ public class FileOperationHelper {
         return mCurFileNameList;
     }
 
-    /**
-     * 里面还是采用的AsynTask实现
-     * */
     private void asnycExecute(Runnable r) {
         final Runnable _r = r;
         new AsyncTask() {
@@ -278,9 +246,6 @@ public class FileOperationHelper {
         Log.v(LOG_TAG, "DeleteFile >>> " + f.filePath);
     }
 
-    /**
-     * 递归调用
-     * */
     private void CopyFile(FileInfo f, String dest) {
         if (f == null || dest == null) {
             Log.e(LOG_TAG, "CopyFile: null parameter");
@@ -301,7 +266,7 @@ public class FileOperationHelper {
 
             for (File child : file.listFiles(mFilter)) {
                 if (!child.isHidden() && Util.isNormalFile(child.getAbsolutePath())) {
-                	CopyFile(Util.GetFileInfo(child, mFilter, Settings.instance().getShowDotAndHiddenFiles()), destPath);
+                    CopyFile(Util.GetFileInfo(child, mFilter, Settings.instance().getShowDotAndHiddenFiles()), destPath);
                 }
             }
         } else {
