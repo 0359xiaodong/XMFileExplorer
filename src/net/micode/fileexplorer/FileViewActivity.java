@@ -142,7 +142,7 @@ public class FileViewActivity extends Fragment implements
 		Intent intent = mActivity.getIntent();
 		String action = intent.getAction();
 		/**
-		 * TODO 对Action为Intent.ACTION_PICK和Intent.ACTION_GET_CONTENT进行处理
+		 * 对Action为Intent.ACTION_PICK和Intent.ACTION_GET_CONTENT进行处理
 		 * */
 		if (!TextUtils.isEmpty(action)
 				&& (action.equals(Intent.ACTION_PICK) || action
@@ -192,11 +192,13 @@ public class FileViewActivity extends Fragment implements
 			mFileViewInteractionHub.setMode(Mode.View);
 		}
 
+		// 初始化FileListView，FileIconHelper，FileListAdapter
 		mFileListView = (ListView) mRootView.findViewById(R.id.file_path_list);
 		mFileIconHelper = new FileIconHelper(mActivity);
 		mAdapter = new FileListAdapter(mActivity, R.layout.file_browser_item,
 				mFileNameList, mFileViewInteractionHub, mFileIconHelper);
 
+		// 是否基于sd卡 TODO 目前还不清楚这里到底是怎么处理的
 		boolean baseSd = intent.getBooleanExtra(GlobalConsts.KEY_BASE_SD,
 				!FileExplorerPreferenceActivity.isReadRoot(mActivity));
 		Log.i(LOG_TAG, "baseSd = " + baseSd);
@@ -211,13 +213,18 @@ public class FileViewActivity extends Fragment implements
 		}
 		mFileViewInteractionHub.setRootPath(rootDir);
 
+		/**
+		 * 获取当前路径
+		 * */
 		String currentDir = FileExplorerPreferenceActivity
 				.getPrimaryFolder(mActivity);
 		Uri uri = intent.getData();
 		if (uri != null) {
 			if (baseSd && this.sdDir.startsWith(uri.getPath())) {
+				// 当前路径是sdDir
 				currentDir = this.sdDir;
 			} else {
+				// 当前路径设为Uri转码得到的路径
 				currentDir = uri.getPath();
 			}
 		}
@@ -232,6 +239,7 @@ public class FileViewActivity extends Fragment implements
 		mFileListView.setAdapter(mAdapter);
 		mFileViewInteractionHub.refreshFileList();
 
+		// 注册sd卡挂载广播
 		IntentFilter intentFilter = new IntentFilter();
 		intentFilter.addAction(Intent.ACTION_MEDIA_MOUNTED);
 		intentFilter.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
@@ -332,7 +340,10 @@ public class FileViewActivity extends Fragment implements
 	}
 
 	/**
-	 * 作用：刷新文件列表信息 1.找出符合显示条件的FileInfo 2.如果FileInfo为空时显示空View 3.为ListView选中pos
+	 * 作用：刷新文件列表信息 
+	 * 1.找出符合显示条件的FileInfo 
+	 * 2.如果FileInfo为空时显示空View 
+	 * 3.为ListView选中pos
 	 * */
 	public boolean onRefreshFileList(String path, FileSortHelper sort) {
 		// file必须是目录文件

@@ -87,6 +87,9 @@ public class FileListItem {
         }
     }
 
+    /**
+     * 职责：对一个File Item被选中时所有改变的集中处理
+     * */
     public static class FileItemOnClickListener implements OnClickListener {
         private Context mContext;
         private FileViewInteractionHub mFileViewInteractionHub;
@@ -99,44 +102,72 @@ public class FileListItem {
 
         @Override
         public void onClick(View v) {
+        	
+        	/**
+        	 * 当点击事件发生的时候
+        	 * 1.设置Checkbox的图标
+        	 * 2.在FileExplorerTabActivity中启动ActionMode
+        	 * */
+        	
             ImageView img = (ImageView) v.findViewById(R.id.file_checkbox);
             assert (img != null && img.getTag() != null);
             // 得到FileInfo
             FileInfo tag = (FileInfo) img.getTag();
             // 取个反
             tag.Selected = !tag.Selected;
-            // TODO
+            // 获取ActionMode
             ActionMode actionMode = ((FileExplorerTabActivity) mContext).getActionMode();
             if (actionMode == null) {
+            	// startActionMode开启contextual action mode
                 actionMode = ((FileExplorerTabActivity) mContext)
-                        .startActionMode(new ModeCallback(mContext,
+                        .startActionMode(new ModeCallback(mContext,   
                                 mFileViewInteractionHub));
+                // 保存ActionMode的状态
                 ((FileExplorerTabActivity) mContext).setActionMode(actionMode);
             } else {
+            	// 会调用onPreparedActionMode刷新
                 actionMode.invalidate();
             }
+            // 设定checkBox图片
             if (mFileViewInteractionHub.onCheckItem(tag, v)) {
                 img.setImageResource(tag.Selected ? R.drawable.btn_check_on_holo_light
                         : R.drawable.btn_check_off_holo_light);
             } else {
                 tag.Selected = !tag.Selected;
             }
+            // 更新ActionMode标题：选中了xx个items
             Util.updateActionModeTitle(actionMode, mContext,
                     mFileViewInteractionHub.getSelectedFileList().size());
         }
     }
 
+    /**
+     * 职责：根据点击重写ActionMode的回调方法
+     * */
     public static class ModeCallback implements ActionMode.Callback {
-        private Menu mMenu;
+        
+    	/**
+    	 * ActionMode.Callback接口实现了许多回调方法
+    	 * */
+    	
+    	private Menu mMenu;
         private Context mContext;
         private FileViewInteractionHub mFileViewInteractionHub;
 
+        /**
+         * 初始化菜单“全选”和“取消”选项
+         * */
         private void initMenuItemSelectAllOrCancel() {
+        	// 当前File Item是否全选
             boolean isSelectedAll = mFileViewInteractionHub.isSelectedAll();
+            // 根据当前是否全选对“取消”和“全选”进行设置
             mMenu.findItem(R.id.action_cancel).setVisible(isSelectedAll);
             mMenu.findItem(R.id.action_select_all).setVisible(!isSelectedAll);
         }
 
+        /**
+         * 滑动到SD卡导航页面
+         * */
         private void scrollToSDcardTab() {
             ActionBar bar = ((FileExplorerTabActivity) mContext).getActionBar();
             if (bar.getSelectedNavigationIndex() != Util.SDCARD_TAB_INDEX) {
@@ -153,7 +184,9 @@ public class FileListItem {
         @Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
             MenuInflater inflater = ((Activity) mContext).getMenuInflater();
+            // 先保存这个menu的引用
             mMenu = menu;
+            // 注入正经的menu,有剪切图形的！
             inflater.inflate(R.menu.operation_menu, mMenu);
             initMenuItemSelectAllOrCancel();
             return true;
@@ -161,7 +194,8 @@ public class FileListItem {
 
         @Override
         public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-            mMenu.findItem(R.id.action_copy_path).setVisible(
+        	// 设置Menu中部分Item的可见情况
+        	mMenu.findItem(R.id.action_copy_path).setVisible(
                     mFileViewInteractionHub.getSelectedFileList().size() == 1);
             mMenu.findItem(R.id.action_cancel).setVisible(
             		mFileViewInteractionHub.isSelected());
@@ -172,16 +206,24 @@ public class FileListItem {
 
         @Override
         public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            switch (item.getItemId()) {
+            
+        	/**
+        	 * 响应ActionItem的点击事件
+        	 * */
+        	
+        	switch (item.getItemId()) {
                 case R.id.action_delete:
                     mFileViewInteractionHub.onOperationDelete();
                     mode.finish();
                     break;
                 case R.id.action_copy:
+                	// 获取FileViewActivity，再调用copyFile方法
                     ((FileViewActivity) ((FileExplorerTabActivity) mContext)
                             .getFragment(Util.SDCARD_TAB_INDEX))
                             .copyFile(mFileViewInteractionHub.getSelectedFileList());
+                    // 结束当前ActionMode
                     mode.finish();
+                    // 结束后重新导向到SD卡页面
                     scrollToSDcardTab();
                     break;
                 case R.id.action_move:
@@ -209,6 +251,7 @@ public class FileListItem {
                     initMenuItemSelectAllOrCancel();
                     break;
             }
+        	// 更新标题：选中了xx个Items
             Util.updateActionModeTitle(mode, mContext, mFileViewInteractionHub
                     .getSelectedFileList().size());
             return false;

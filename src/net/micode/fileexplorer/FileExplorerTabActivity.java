@@ -40,6 +40,10 @@ public class FileExplorerTabActivity extends Activity {
 	private static final int DEFAULT_OFFSCREEN_PAGES = 2;
 	ViewPager mViewPager;
 	TabsAdapter mTabsAdapter;
+	
+	/**
+	 * 保存了自己的ActionMode
+	 * */
 	ActionMode mActionMode;
 
 	@Override
@@ -126,6 +130,9 @@ public class FileExplorerTabActivity extends Activity {
 		return mActionMode;
 	}
 
+	/**
+	 * 通过tabIndex获得对应的fragment
+	 * */
 	public Fragment getFragment(int tabIndex) {
 		return mTabsAdapter.getItem(tabIndex);
 	}

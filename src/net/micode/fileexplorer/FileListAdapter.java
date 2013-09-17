@@ -52,7 +52,13 @@ public class FileListAdapter extends ArrayAdapter<FileInfo> {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        View view = null;
+        
+    	/**
+    	 * Q:item的长点击事件到底是在哪里实现的？
+    	 * A:采用的是contextual action bar mode
+    	 * */
+    	
+    	View view = null;
         if (convertView != null) {
             view = convertView;
         } else {
@@ -63,7 +69,7 @@ public class FileListAdapter extends ArrayAdapter<FileInfo> {
         // 填充item
         FileListItem.setupFileListItemInfo(mContext, view, lFileInfo,
                 mFileIcon, mFileViewInteractionHub);
-        // 为checkbox这个imageView所在FrameLayout设定点击监听 TODO
+        // 为checkbox这个imageView所在FrameLayout设定点击监听
         view.findViewById(R.id.file_checkbox_area).setOnClickListener(
                 new FileListItem.FileItemOnClickListener(mContext,
                         mFileViewInteractionHub));

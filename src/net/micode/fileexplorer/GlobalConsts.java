@@ -19,6 +19,9 @@
 
 package net.micode.fileexplorer;
 
+/**
+ * 全局常量
+ * */
 public abstract class GlobalConsts {
     public static final String KEY_BASE_SD = "key_base_sd";
 

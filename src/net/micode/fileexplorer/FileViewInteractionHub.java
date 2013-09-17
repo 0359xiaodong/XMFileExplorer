@@ -197,6 +197,9 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         setupOperationPane();
     }
 
+    /**
+     * 设置导航bar，其实就是显示一个路径，加上一个按钮
+     * */
     private void setupNaivgationBar() {
         mNavigationBar = mFileViewListener.getViewById(R.id.navigation_bar);
         mNavigationBarText = (TextView) mFileViewListener.getViewById(R.id.current_path_view);
@@ -705,8 +708,11 @@ public class FileViewInteractionHub implements IOperationProgressListener {
     }
 
     // context menu
+	/**
+	 * TODO 在这个地方又创建一个上下文菜单，这里难道是为了兼容模式？ (断点并没有进入)
+	 * */
     private OnCreateContextMenuListener mListViewContextMenuListener = new OnCreateContextMenuListener() {
-        @Override
+    	@Override
         public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
             if (isInSelection() || isMoveState())
                 return;
@@ -748,7 +754,9 @@ public class FileViewInteractionHub implements IOperationProgressListener {
 
     private void setupFileListView() {
         mFileListView = (ListView) mFileViewListener.getViewById(R.id.file_path_list);
+        // 响应长点击
         mFileListView.setLongClickable(true);
+        // 设置监听者
         mFileListView.setOnCreateContextMenuListener(mListViewContextMenuListener);
         mFileListView.setOnItemClickListener(new OnItemClickListener() {
             @Override
@@ -1061,6 +1069,9 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         return mSelectFilesCallback != null;
     }
 
+    /**
+     * 作用：返回是否全选
+     * */
     public boolean isSelectedAll() {
         return mFileViewListener.getItemCount() != 0 && mCheckedFileNameList.size() == mFileViewListener.getItemCount();
     }

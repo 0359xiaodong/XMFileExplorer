@@ -100,6 +100,9 @@ public class FileExplorerPreferenceActivity extends PreferenceActivity implement
         }
     }
 
+    /**
+     * 作用：通过用户偏好判断是否从根目录读起
+     * */
     public static boolean isReadRoot(Context context) {
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
 

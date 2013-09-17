@@ -409,8 +409,12 @@ public class Util {
         return dateFormat.format(date) + " " + timeFormat.format(date);
     }
 
+    /**
+     * 作用：根据selectedNum设置mode的title，这个ActionMode是附在上层的
+     * */
     public static void updateActionModeTitle(ActionMode mode, Context context, int selectedNum) {
         if (mode != null) {
+        	// 动态设置选中的items数量的文本（String并非写死的）
             mode.setTitle(context.getString(R.string.multi_select_title,selectedNum));
             if(selectedNum == 0){
                 mode.finish();
