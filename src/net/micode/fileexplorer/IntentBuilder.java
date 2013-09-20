@@ -29,8 +29,14 @@ import android.content.Intent;
 import android.net.Uri;
 import android.text.TextUtils;
 
+/**
+ * 职责：提供静态方法，根据FileInfo构造Intent和启动相应Activity
+ * */
 public class IntentBuilder {
 
+	/**
+	 * 作用：根据filepath决定启动的Activity
+	 * */
     public static void viewFile(final Context context, final String filePath) {
         String type = getMimeType(filePath);
 
@@ -51,6 +57,7 @@ public class IntentBuilder {
                     context.getString(R.string.dialog_type_audio),
                     context.getString(R.string.dialog_type_video),
                     context.getString(R.string.dialog_type_image) };
+            // 给四种替补方案
             dialogBuilder.setItems(menuItemArray,
                     new DialogInterface.OnClickListener() {
                         @Override
@@ -81,6 +88,9 @@ public class IntentBuilder {
         }
     }
 
+    /**
+     * 作用：通过FileInfo list构造Intent，主要是设置Uri和MIME type
+     * */
     public static Intent buildSendFile(ArrayList<FileInfo> files) {
         ArrayList<Uri> uris = new ArrayList<Uri>();
 
@@ -91,6 +101,7 @@ public class IntentBuilder {
 
             File fileIn = new File(file.filePath);
             mimeType = getMimeType(file.fileName);
+            // 构造Uri
             Uri u = Uri.fromFile(fileIn);
             uris.add(u);
         }
@@ -103,9 +114,11 @@ public class IntentBuilder {
                 : android.content.Intent.ACTION_SEND);
 
         if (multiple) {
+        	// 多条Uri
             intent.setType("*/*");
             intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
         } else {
+        	// 单条Uri
             intent.setType(mimeType);
             intent.putExtra(Intent.EXTRA_STREAM, uris.get(0));
         }
@@ -113,17 +126,21 @@ public class IntentBuilder {
         return intent;
     }
 
+    /**
+     * 作用：通过文件路径得到MIME type
+     * */
     private static String getMimeType(String filePath) {
         int dotPosition = filePath.lastIndexOf('.');
+        // 没有扩展名，属于任意类型
         if (dotPosition == -1)
             return "*/*";
-
+        // 根据扩展名，得打MIME type
         String ext = filePath.substring(dotPosition + 1, filePath.length()).toLowerCase();
         String mimeType = MimeUtils.guessMimeTypeFromExtension(ext);
         if (ext.equals("mtz")) {
             mimeType = "application/miui-mtz";
         }
-
+        
         return mimeType != null ? mimeType : "*/*";
     }
 }

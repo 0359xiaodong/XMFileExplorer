@@ -204,9 +204,10 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         mNavigationBar = mFileViewListener.getViewById(R.id.navigation_bar);
         mNavigationBarText = (TextView) mFileViewListener.getViewById(R.id.current_path_view);
         mNavigationBarUpDownArrow = (ImageView) mFileViewListener.getViewById(R.id.path_pane_arrow);
+        // 单独为这个路径条增加一个OnClickListener
         View clickable = mFileViewListener.getViewById(R.id.current_path_pane);
         clickable.setOnClickListener(buttonClick);
-
+        // 下拉导航条
         mDropdownNavigation = mFileViewListener.getViewById(R.id.dropdown_navigation);
 
         setupClick(mNavigationBar, R.id.path_pane_up_level);
@@ -255,6 +256,7 @@ public class FileViewInteractionHub implements IOperationProgressListener {
                     break;
                 case R.id.path_pane_up_level:
                     onOperationUpLevel();
+                    // 结束ActionMode
                     ActionMode mode = ((FileExplorerTabActivity) mContext).getActionMode();
                     if (mode != null) {
                         mode.finish();
@@ -262,7 +264,6 @@ public class FileViewInteractionHub implements IOperationProgressListener {
                     break;
             }
         }
-
     };
 
     private void onOperationReferesh() {
@@ -359,21 +360,24 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         if (mDropdownNavigation.getVisibility() == View.VISIBLE) {
             showDropdownNavigation(false);
         } else {
+        	// 设置下拉list
             LinearLayout list = (LinearLayout) mDropdownNavigation.findViewById(R.id.dropdown_navigation_list);
             list.removeAllViews();
             int pos = 0;
             String displayPath = mFileViewListener.getDisplayPath(mCurrentPath);
             boolean root = true;
             int left = 0;
+            // 
             while (pos != -1 && !displayPath.equals("/")) {//如果当前位置在根文件夹则不显示导航条
                 int end = displayPath.indexOf("/", pos);
                 if (end == -1)
                     break;
-
+                // 框图
                 View listItem = LayoutInflater.from(mContext).inflate(R.layout.dropdown_item,
                         null);
 
                 View listContent = listItem.findViewById(R.id.list_item);
+                // 设置内容与左边框的距离
                 listContent.setPadding(left, 0, 0, 0);
                 left += 20;
                 ImageView img = (ImageView) listItem.findViewById(R.id.item_icon);
@@ -611,17 +615,25 @@ public class FileViewInteractionHub implements IOperationProgressListener {
         return true;
     }
 
+    /**
+     * 作用：根据当前path下的文件改变，启动广播使系统做出响应
+     * 1.目录文件
+     * 2.其他文件，加入media database
+     * */
     private void notifyFileSystemChanged(String path) {
         if (path == null)
             return;
         final File f = new File(path);
         final Intent intent;
+        // 启动广播
         if (f.isDirectory()) {
+        	// TODO 目录，启动ACTION_MEDIA_MOUNTED ?
             intent = new Intent(Intent.ACTION_MEDIA_MOUNTED);
             intent.setClassName("com.android.providers.media", "com.android.providers.media.MediaScannerReceiver");
             intent.setData(Uri.fromFile(Environment.getExternalStorageDirectory()));
             Log.v(LOG_TAG, "directory changed, send broadcast:" + intent.toString());
         } else {
+        	// 单个文件，需要加入Media DB
             intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
             intent.setData(Uri.fromFile(new File(path)));
             Log.v(LOG_TAG, "file changed, send broadcast:" + intent.toString());
