@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Rect;
@@ -31,6 +32,10 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
+/**
+ * 职责：自定义的View，用于绘制容量显示条
+ * */
+@SuppressLint("DrawAllocation")
 public class CategoryBar extends View {
     private static final String LOG_TAG = "CategoryBar";
 
@@ -41,13 +46,22 @@ public class CategoryBar extends View {
     private static final int ANI_PERIOD = 100;
     private Timer timer;
 
+    /**
+     * 职责：数据类，保存的是要绘制的信息
+     * */
     private class Category {
-        public long value;
+        /**
+         * mensize
+         * */
+    	public long value;
 
         public long tmpValue; // used for animation
 
         public long aniStep; // animation step
 
+        /**
+         * 图片资源id
+         * */
         public int resImg;
     }
 
@@ -55,6 +69,9 @@ public class CategoryBar extends View {
 
     private long mFullValue;
 
+    /**
+     * 应该是设置总的mensize
+     * */
     public void setFullValue(long value) {
         mFullValue = value;
     }
@@ -81,18 +98,21 @@ public class CategoryBar extends View {
         if (index < 0 || index >= categories.size())
             return false;
         categories.get(index).value = value;
+        // 重绘?
         invalidate();
         return true;
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
+    	// 根据resId获取Drawable对象
         Drawable d = getDrawable(R.drawable.category_bar_empty);
-
+        // 获取宽度和高度
         int width = getWidth() - MARGIN * 2;
         int height = getHeight() - MARGIN * 2;
+        // 是否水平?
         boolean isHorizontal = (width > height);
-
+        // 构建Rect对象
         Rect bounds = null;
         if ( isHorizontal )
             bounds = new Rect(MARGIN, 0, MARGIN + width, d.getIntrinsicHeight());
@@ -101,21 +121,28 @@ public class CategoryBar extends View {
 
         int beginning = MARGIN;
         if ( !isHorizontal ) beginning += height;
+        // 设定Drawable对象的Rect
         d.setBounds(bounds);
+        // 在当前canvas上画出图形
         d.draw(canvas);
         if (mFullValue != 0) {
             for (Category c : categories) {
+            	// value是当前category占的mensize
                 long value = (timer == null ? c.value : c.tmpValue);
                 if ( isHorizontal ) {
+                	// w = 比重*宽度 = 实际所占宽度
                     int w = (int) (value * width / mFullValue);
                     if (w == 0)
                         continue;
+                    // 重新设定x坐标
                     bounds.left = beginning;
                     bounds.right = beginning + w;
                     d = getDrawable(c.resImg);
                     bounds.bottom = bounds.top + d.getIntrinsicHeight();
                     d.setBounds(bounds);
+                    // 在当前canvas上画出
                     d.draw(canvas);
+                    // 下一次x+w
                     beginning += w;
                 }
                 else {
@@ -132,14 +159,18 @@ public class CategoryBar extends View {
                 }
             }
         }
+        // 最后，画出圆角效果
         if ( isHorizontal ) {
+        	// 水平，设置x
             bounds.left = 0;
             bounds.right = bounds.left + getWidth();
         }
         else {
+        	// 垂直，设置y
             bounds.top = 0;
             bounds.bottom = bounds.top + getHeight();
         }
+        // 画圆角
         d = getDrawable(R.drawable.category_bar_mask);
         d.setBounds(bounds);
         d.draw(canvas);
@@ -149,16 +180,21 @@ public class CategoryBar extends View {
         return getContext().getResources().getDrawable(id);
     }
 
+    /**
+     * 每次增加一点
+     * */
     private void stepAnimation() {
         if (timer == null)
             return;
 
         int finished = 0;
         for (Category c : categories) {
+        	// 注意，每执行完只是+aniStep
             c.tmpValue += c.aniStep;
             if (c.tmpValue >= c.value) {
                 c.tmpValue = c.value;
                 finished++;
+                // 全部执行结束，stop animation
                 if (finished >= categories.size()) {
                     // stop animation
                     timer.cancel();
@@ -168,7 +204,7 @@ public class CategoryBar extends View {
                 }
             }
         }
-
+        // TODO 在非UI线程中使用，刷新UI
         postInvalidate();
     }
 
@@ -185,6 +221,7 @@ public class CategoryBar extends View {
         }
 
         timer = new Timer();
+        // 100ms一次
         timer.scheduleAtFixedRate(new TimerTask() {
 
             public void run() {

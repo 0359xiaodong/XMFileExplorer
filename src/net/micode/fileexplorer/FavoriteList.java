@@ -22,15 +22,24 @@ import net.micode.fileexplorer.FavoriteDatabaseHelper.FavoriteDatabaseListener;
 import java.io.File;
 import java.util.ArrayList;
 
+/**
+ * 职责：显示FavoriteList，聚合了ArrayAdapter,ListView,FavoriteDatabaseHelper等 
+ * */
 public class FavoriteList implements FavoriteDatabaseListener {
     private static final String LOG_TAG = "FavoriteList";
 
+    /**
+     * FavoriteItem的列表，是待绑定的数据信息
+     * */
     private ArrayList<FavoriteItem> mFavoriteList = new ArrayList<FavoriteItem>();
 
     private ArrayAdapter<FavoriteItem> mFavoriteListAdapter;
 
     private FavoriteDatabaseHelper mFavoriteDatabase;
 
+    /**
+     * 用于显示的ListView
+     * */
     private ListView mListView;
 
     private FavoriteDatabaseListener mListener;
@@ -52,9 +61,13 @@ public class FavoriteList implements FavoriteDatabaseListener {
         return mFavoriteListAdapter;
     }
 
+    /**
+     * 作用：从数据库查一遍，保持mFavoriteList的内容最新
+     * */
     public void update() {
         mFavoriteList.clear();
-
+        
+        // 为所有FavoriteItem构造FileInfo
         Cursor c = mFavoriteDatabase.query();
         if (c != null) {
             while (c.moveToNext()) {
@@ -81,18 +94,22 @@ public class FavoriteList implements FavoriteDatabaseListener {
         mFavoriteListAdapter.notifyDataSetChanged();
     }
 
+    /**
+     * 作用：初始化默认FavoriteList
+     * */
     public void initList() {
         mFavoriteList.clear();
+        // 触发数据库的创建
         Cursor c = mFavoriteDatabase.query();
         if (c != null)
             c.close();
-
+        // 第一次创建FavoriteDatabase,插入默认的FavoriteItem
         if (mFavoriteDatabase.isFirstCreate()) {
             for (FavoriteItem fi : Util.getDefaultFavorites(mContext)) {
                 mFavoriteDatabase.insert(fi.title, fi.location);
             }
         }
-
+        // 更新mFavoriteList
         update();
     }
 

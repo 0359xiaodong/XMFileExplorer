@@ -33,6 +33,9 @@ import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
+/**
+ * 职责：
+ * */
 public class FileCategoryActivity extends Fragment implements IFileInteractionListener,
         FavoriteDatabaseListener, IBackPressedListener {
 
@@ -44,6 +47,9 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
 
     private HashMap<FileCategory, Integer> categoryIndex = new HashMap<FileCategory, Integer>();
 
+    /**
+     * 绑定到一个ListView中
+     * */
     private FileListCursorAdapter mAdapter;
 
     private FileViewInteractionHub mFileViewInteractionHub;
@@ -52,10 +58,16 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
 
     private FileIconHelper mFileIconHelper;
 
+    /**
+     * 自定义View，分类容量显示条
+     * */
     private CategoryBar mCategoryBar;
 
     private ScannerReceiver mScannerReceiver;
 
+    /**
+     * 当前FavoriteList
+     * */
     private FavoriteList mFavoriteList;
 
     private ViewPage curViewPage = ViewPage.Invalid;
@@ -90,22 +102,28 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
         mActivity = getActivity();
         mFileViewActivity = (FileViewActivity) ((FileExplorerTabActivity) mActivity)
                 .getFragment(Util.SDCARD_TAB_INDEX);
+        // 默认显示category，其他file_path_list是gone
         mRootView = inflater.inflate(R.layout.file_explorer_category, container, false);
         curViewPage = ViewPage.Invalid;
         mFileViewInteractionHub = new FileViewInteractionHub(this);
         mFileViewInteractionHub.setMode(Mode.View);
         mFileViewInteractionHub.setRootPath("/");
         mFileIconHelper = new FileIconHelper(mActivity);
+        // 初始化默认的FavoriteList，有照片，SD卡..
         mFavoriteList = new FavoriteList(mActivity, (ListView) mRootView.findViewById(R.id.favorite_list), this, mFileIconHelper);
         mFavoriteList.initList();
+        // 初始化CursorAdapter，用来绑定来自数据库查询的FileInfo
         mAdapter = new FileListCursorAdapter(mActivity, null, mFileViewInteractionHub, mFileIconHelper);
-
+        // 正常的fileList
         ListView fileListView = (ListView) mRootView.findViewById(R.id.file_path_list);
         fileListView.setAdapter(mAdapter);
-
+        // 为category显示页面图标设定点击事件
         setupClick();
+        // 设置category bar
         setupCategoryInfo();
+        // 根据SD卡刷新相关UI的CategoryInfo
         updateUI();
+        // 注册reciver，进行后台CategoryInfo更新
         registerScannerReceiver();
 
         return mRootView;
@@ -123,24 +141,29 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
 
     private void setupCategoryInfo() {
         mFileCagetoryHelper = new FileCategoryHelper(mActivity);
-
+        
         mCategoryBar = (CategoryBar) mRootView.findViewById(R.id.category_bar);
+        
+        // 建立Category对象和Index的对应关系
         int[] imgs = new int[] {
                 R.drawable.category_bar_music, R.drawable.category_bar_video,
                 R.drawable.category_bar_picture, R.drawable.category_bar_theme,
                 R.drawable.category_bar_document, R.drawable.category_bar_zip,
                 R.drawable.category_bar_apk, R.drawable.category_bar_other
         };
-
         for (int i = 0; i < imgs.length; i++) {
             mCategoryBar.addCategory(imgs[i]);
         }
-
         for (int i = 0; i < FileCategoryHelper.sCategories.length; i++) {
             categoryIndex.put(FileCategoryHelper.sCategories[i], i);
         }
     }
 
+    /**
+     * 作用：刷新CategoryInfo
+     * 1.根据SD卡信息填充CategoryInfo
+     * 2.启动动画
+     * */
     public void refreshCategoryInfo() {
         SDCardInfo sdCardInfo = Util.getSDCardInfo();
         if (sdCardInfo != null) {
@@ -148,7 +171,7 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
             setTextView(R.id.sd_card_capacity, getString(R.string.sd_card_size, Util.convertStorage(sdCardInfo.total)));
             setTextView(R.id.sd_card_available, getString(R.string.sd_card_available, Util.convertStorage(sdCardInfo.free)));
         }
-
+        // 填充CategoryInfo
         mFileCagetoryHelper.refreshCategoryInfo();
 
         // the other category size should include those files didn't get scanned.
@@ -160,8 +183,9 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
             // other category size should be set separately with calibration
             if(fc == FileCategory.Other)
                 continue;
-
+            // 设置每个Category显示的size信息，显示在textView
             setCategorySize(fc, categoryInfo.size);
+            // 设置Category的size
             setCategoryBarValue(fc, categoryInfo.size);
             size += categoryInfo.size;
         }
@@ -173,7 +197,7 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
         }
 
         setCategoryCount(FileCategory.Favorite, mFavoriteList.getCount());
-
+        // 启动animation
         if (mCategoryBar.getVisibility() == View.VISIBLE) {
             mCategoryBar.startAnimation();
         }
@@ -183,11 +207,14 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
         Home, Favorite, Category, NoSD, Invalid
     }
 
+    /**
+     * 根据ViewPage决定显示的View
+     * */
     private void showPage(ViewPage p) {
         if (curViewPage == p) return;
 
         curViewPage = p;
-
+        // 先不显示这些
         showView(R.id.file_path_list, false);
         showView(R.id.navigation_bar, false);
         showView(R.id.category_page, false);
@@ -195,7 +222,7 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
         showView(R.id.sd_not_available_page, false);
         mFavoriteList.show(false);
         showEmptyView(false);
-
+        // 根据p的类型，选择要显示的View
         switch (p) {
             case Home:
                 showView(R.id.category_page, true);
@@ -226,6 +253,9 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
             emptyView.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
+    /**
+     * 作用：根据show，设定相应id的View为View.VISIBLE或View.GONE
+     * */
     private void showView(int id, boolean show) {
         View view = mRootView.findViewById(id);
         if (view != null) {
@@ -238,13 +268,14 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
         public void onClick(View v) {
             FileCategory f = button2Category.get(v.getId());
             if (f != null) {
+            	// 1.设置当前FileCategory 2.设置显示的View
                 onCategorySelected(f);
                 if (f != FileCategory.Favorite) {
+                	// 可以设置菜单
                     setHasOptionsMenu(true);
                 }
             }
         }
-
     };
 
     private void setCategoryCount(FileCategory fc, long count) {
@@ -260,14 +291,19 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
         text.setText(t);
     }
 
+    /**
+     * 作用：1.设置当前FileCategory 2.设置显示的View
+     * */
     private void onCategorySelected(FileCategory f) {
-        if (mFileCagetoryHelper.getCurCategory() != f) {
+        // 设置当前FileCategory
+    	if (mFileCagetoryHelper.getCurCategory() != f) {
             mFileCagetoryHelper.setCurCategory(f);
+            // TODO 设置当前路径?
             mFileViewInteractionHub.setCurrentPath(mFileViewInteractionHub.getRootPath()
                     + getString(mFileCagetoryHelper.getCurCategoryNameResId()));
             mFileViewInteractionHub.refreshFileList();
         }
-
+        // 设置显示的View
         if (f == FileCategory.Favorite) {
             showPage(ViewPage.Favorite);
         } else {
@@ -275,11 +311,15 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
         }
     }
 
+
     private void setupClick(int id) {
         View button = mRootView.findViewById(id);
         button.setOnClickListener(onClickListener);
     }
 
+    /**
+     * 设置在分类浏览中，每个图标（音乐、视频、图片...）的点击事件
+     * */
     private void setupClick() {
         setupClick(R.id.category_music);
         setupClick(R.id.category_video);
@@ -423,7 +463,7 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
 
     @Override
     public FileInfo getItem(int pos) {
-        return mAdapter.getFileItem(pos);
+        return mAdapter.getFileItemByPos(pos);
     }
 
     @Override
@@ -480,6 +520,9 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
         return 0;
     }
 
+    /**
+     * 设置每个Category显示的size信息，显示在textView
+     * */
     private void setCategorySize(FileCategory fc, long size) {
         int txtId = 0;
         int resId = 0;
@@ -520,7 +563,7 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
 
         if (txtId == 0 || resId == 0)
             return;
-
+        // 设置textView
         setTextView(txtId, getString(resId) + ":" + Util.convertStorage(size));
     }
 
@@ -538,6 +581,9 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
         }
     }
 
+    /**
+     * 接受广播，刷新文件
+     * */
     private class ScannerReceiver extends BroadcastReceiver {
 
         @Override
@@ -552,15 +598,21 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
         }
     }
 
+    /**
+     * 根据实际情况刷新相关UI的CategoryInfo
+     * */
     private void updateUI() {
         boolean sdCardReady = Util.isSDCardReady();
         if (sdCardReady) {
             if (preViewPage != ViewPage.Invalid) {
+            	// pre
                 showPage(preViewPage);
                 preViewPage = ViewPage.Invalid;
             } else if (curViewPage == ViewPage.Invalid || curViewPage == ViewPage.NoSD) {
-                showPage(ViewPage.Home);
+                // home
+            	showPage(ViewPage.Home);
             }
+            // 刷新CategoryInfo相关UI
             refreshCategoryInfo();
             // refresh file list
             mFileViewInteractionHub.refreshFileList();
@@ -579,6 +631,7 @@ public class FileCategoryActivity extends Fragment implements IFileInteractionLi
             timer.cancel();
         }
         timer = new Timer();
+        // 1s一次
         timer.schedule(new TimerTask() {
 
             public void run() {

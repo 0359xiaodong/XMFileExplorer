@@ -19,6 +19,9 @@
 
 package net.micode.fileexplorer;
 
+/**
+ * 职责：数据类，保存dbid,title,path,FileInfo
+ * */
 public class FavoriteItem {
     // id in the database
     public long id;

@@ -82,6 +82,9 @@ public class FileCategoryHelper {
             FileCategory.Doc, FileCategory.Zip, FileCategory.Apk, FileCategory.Other
     };
 
+    /**
+     * 当前分类
+     * */
     private FileCategory mCategory;
 
     private Context mContext;
@@ -100,6 +103,9 @@ public class FileCategoryHelper {
         mCategory = c;
     }
 
+    /**
+     * 根据当前mCategory获取对应的textName
+     * */
     public int getCurCategoryNameResId() {
         return categoryNames.get(mCategory);
     }
@@ -133,6 +139,11 @@ public class FileCategoryHelper {
         }
     }
 
+    /**
+     * 数据类：显示每个分类的宏观信息
+     * count:数量
+     * size:容量
+     * */
     public class CategoryInfo {
         public long count;
 
@@ -159,6 +170,9 @@ public class FileCategoryHelper {
         return  selection.substring(0, selection.lastIndexOf(")") + 1);
     }
 
+    /**
+     * 作用：根据FileCategory返回select语句
+     * */
     private String buildSelectionByCategory(FileCategory cat) {
         String selection = null;
         switch (cat) {
@@ -241,6 +255,9 @@ public class FileCategoryHelper {
         return mContext.getContentResolver().query(uri, columns, selection, null, sortOrder);
     }
 
+    /**
+     * 填充FileCategory的CategoryInfo
+     * */
     public void refreshCategoryInfo() {
         // clear
         for (FileCategory fc : sCategories) {
@@ -249,16 +266,17 @@ public class FileCategoryHelper {
 
         // query database
         String volumeName = "external";
-
+        // Provider:Audio.Media
         Uri uri = Audio.Media.getContentUri(volumeName);
+        // 填充FileCategory.Music的CategoryInfo
         refreshMediaCategory(FileCategory.Music, uri);
-
+        // 填充FileCategory.Video的CategoryInfo
         uri = Video.Media.getContentUri(volumeName);
         refreshMediaCategory(FileCategory.Video, uri);
-
+        // 填充FileCategory.Picture的CategoryInfo
         uri = Images.Media.getContentUri(volumeName);
         refreshMediaCategory(FileCategory.Picture, uri);
-
+        // Provider:Files
         uri = Files.getContentUri(volumeName);
         refreshMediaCategory(FileCategory.Theme, uri);
         refreshMediaCategory(FileCategory.Doc, uri);
@@ -266,6 +284,9 @@ public class FileCategoryHelper {
         refreshMediaCategory(FileCategory.Apk, uri);
     }
 
+    /**
+     * 根据FileCategory和Uri来填充相应的CategoryInfos
+     * */
     private boolean refreshMediaCategory(FileCategory fc, Uri uri) {
         String[] columns = new String[] {
                 "COUNT(*)", "SUM(_size)"

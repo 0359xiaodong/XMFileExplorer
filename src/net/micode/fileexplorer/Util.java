@@ -307,6 +307,9 @@ public class Util {
 		return true;
 	}
 
+	/**
+	 * 作用：添加默认的FavoriteItem：照片，SD卡
+	 * */
 	public static ArrayList<FavoriteItem> getDefaultFavorites(Context context) {
 		ArrayList<FavoriteItem> list = new ArrayList<FavoriteItem>();
 		list.add(new FavoriteItem(context.getString(R.string.favorite_photo),
@@ -365,16 +368,24 @@ public class Util {
 			return String.format("%d B", size);
 	}
 
+	/**
+	 * total,free
+	 * */
 	public static class SDCardInfo {
 		public long total;
 
 		public long free;
 	}
 
+	/**
+	 * 作用：计算sd卡的total容量和free容量
+	 * */
+	@SuppressWarnings("deprecation")
 	public static SDCardInfo getSDCardInfo() {
 		String sDcString = android.os.Environment.getExternalStorageState();
 
 		if (sDcString.equals(android.os.Environment.MEDIA_MOUNTED)) {
+			// sd卡已挂载
 			File pathFile = android.os.Environment
 					.getExternalStorageDirectory();
 
@@ -428,6 +439,9 @@ public class Util {
 		manager.notify(drawableId, notification);
 	}
 
+	/**
+	 * 作用：将long的time转换为标准的时间格式
+	 * */
 	public static String formatDateString(Context context, long time) {
 		DateFormat dateFormat = android.text.format.DateFormat
 				.getDateFormat(context);
@@ -438,7 +452,7 @@ public class Util {
 	}
 
 	/**
-	 * 作用：根据selectedNum设置mode的title，这个ActionMode是附在上层的
+	 * 作用：根据selectedNum设置mode的title
 	 * */
 	public static void updateActionModeTitle(ActionMode mode, Context context,
 			int selectedNum) {

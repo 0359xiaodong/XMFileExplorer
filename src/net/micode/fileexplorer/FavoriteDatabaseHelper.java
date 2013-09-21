@@ -25,6 +25,9 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+/**
+ * 职责：继承了SQLiteOpenHelper，进行db操作
+ * */
 public class FavoriteDatabaseHelper extends SQLiteOpenHelper {
 
     private final static String DATABASE_NAME = "file_explorer";
@@ -61,6 +64,12 @@ public class FavoriteDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
+    	
+    	/**
+    	 * The database is not actually created or opened until one of 
+    	 * getWritableDatabase or getReadableDatabase is called.
+    	 * */
+    	
         String sql = "Create table " + TABLE_NAME + "(" + FIELD_ID + " integer primary key autoincrement,"
                 + FIELD_TITLE + " text, " + FIELD_LOCATION + " text );";
         db.execSQL(sql);
@@ -92,6 +101,9 @@ public class FavoriteDatabaseHelper extends SQLiteOpenHelper {
         return ret;
     }
 
+    /**
+     * 作用：查出所有在table “favorite”中的元素
+     * */
     public Cursor query() {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_NAME, null, null, null, null, null, null);

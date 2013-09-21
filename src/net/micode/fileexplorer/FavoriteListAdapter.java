@@ -28,6 +28,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
+/**
+ * 职责：继承了ArrayAdapter，将FavoriteItem list适配到ListView
+ * */
 public class FavoriteListAdapter extends ArrayAdapter<FavoriteItem> {
     private Context mContext;
 
@@ -36,7 +39,7 @@ public class FavoriteListAdapter extends ArrayAdapter<FavoriteItem> {
     private FileIconHelper mFileIcon;
 
     public FavoriteListAdapter(Context context, int resource, List<FavoriteItem> objects, FileIconHelper fileIcon) {
-        super(context, resource, objects);
+        super(context, resource, objects); //这货是个ArrayAdapter
         mContext = context;
         mInflater = LayoutInflater.from(context);
         mFileIcon = fileIcon;
@@ -53,7 +56,6 @@ public class FavoriteListAdapter extends ArrayAdapter<FavoriteItem> {
 
         FavoriteItem item = getItem(position);
         FileInfo lFileInfo = item.fileInfo;
-
         Util.setText(view, R.id.file_name, item.title != null ? item.title : lFileInfo.fileName);
         if (lFileInfo.ModifiedDate > 0) {
             Util.setText(view, R.id.modified_time, Util.formatDateString(mContext, lFileInfo.ModifiedDate));

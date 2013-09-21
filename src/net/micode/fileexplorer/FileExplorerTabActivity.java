@@ -40,7 +40,7 @@ public class FileExplorerTabActivity extends Activity {
 	private static final int DEFAULT_OFFSCREEN_PAGES = 2;
 	ViewPager mViewPager;
 	TabsAdapter mTabsAdapter;
-	
+
 	/**
 	 * 保存了自己的ActionMode
 	 * */
@@ -238,7 +238,7 @@ public class FileExplorerTabActivity extends Activity {
 					mViewPager.setCurrentItem(i); // 移动到i的位置
 				}
 			}
-			
+
 			/**
 			 * 用来响应上下文菜单
 			 * 只有标题为File的tab有上下文菜单

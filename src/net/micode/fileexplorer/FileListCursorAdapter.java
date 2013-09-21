@@ -29,6 +29,9 @@ import android.widget.CursorAdapter;
 import java.util.Collection;
 import java.util.HashMap;
 
+/**
+ * 职责：
+ * */
 public class FileListCursorAdapter extends CursorAdapter {
 
     private final LayoutInflater mFactory;
@@ -50,9 +53,16 @@ public class FileListCursorAdapter extends CursorAdapter {
         mContext = context;
     }
 
+
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
-        FileInfo fileInfo = getFileItem(cursor.getPosition());
+    	
+    	/**
+    	 * 绑定cursor到view
+    	 * */
+    	
+    	// 查出fileInfo
+        FileInfo fileInfo = getFileItemByPos(cursor.getPosition());
         if (fileInfo == null) {
             // file is not existing, create a fake info
             fileInfo = new FileInfo();
@@ -62,6 +72,7 @@ public class FileListCursorAdapter extends CursorAdapter {
             fileInfo.fileSize = cursor.getLong(FileCategoryHelper.COLUMN_SIZE);
             fileInfo.ModifiedDate = cursor.getLong(FileCategoryHelper.COLUMN_DATE);
         }
+        // 设置View
         FileListItem.setupFileListItemInfo(mContext, view, fileInfo, mFileIcon,
                 mFileViewInteractionHub);
         view.findViewById(R.id.category_file_checkbox_area).setOnClickListener(
@@ -70,6 +81,13 @@ public class FileListCursorAdapter extends CursorAdapter {
 
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup parent) {
+    	
+        /**
+         * 步骤
+         * newView ---> bindView
+         * */
+    	
+    	// 返回需要绑定的ViewItem
         return mFactory.inflate(R.layout.category_file_browser_item, parent, false);
     }
 
@@ -99,21 +117,28 @@ public class FileListCursorAdapter extends CursorAdapter {
         return mFileNameList.values();
     }
 
-    public FileInfo getFileItem(int pos) {
+    /**
+     * 作用：根据在cursor对象中的位置来得到FileInfo
+     * @return 返回null表示db中该path下的文件不存在
+     * */
+    public FileInfo getFileItemByPos(int pos) {
         Integer position = Integer.valueOf(pos);
         if (mFileNameList.containsKey(position))
             return mFileNameList.get(position);
-
+        // Curosr?? 
         Cursor cursor = (Cursor) getItem(pos);
         FileInfo fileInfo = getFileInfo(cursor);
         if (fileInfo == null)
             return null;
-
+        // 填充dbId
         fileInfo.dbId = cursor.getLong(FileCategoryHelper.COLUMN_ID);
         mFileNameList.put(position, fileInfo);
         return fileInfo;
     }
 
+    /**
+     * 作用：通过cursor中的路径获取FileInfo
+     * */
     private FileInfo getFileInfo(Cursor cursor) {
         return (cursor == null || cursor.getCount() == 0) ? null : Util
                 .GetFileInfo(cursor.getString(FileCategoryHelper.COLUMN_PATH));
