@@ -57,7 +57,11 @@ abstract public class Util {
 	}
 	
 	
+	/**
+	 * 作用：转换int的(0~3)位为byte
+	 * */
 	public static byte byteOfInt(int value, int which) {
+		// get low 8 bits
 		int shift = which * 8;
 		return (byte)(value >> shift); 
 	}
@@ -78,8 +82,13 @@ abstract public class Util {
 		}	
 	}
 	
+	/**
+	 * 作用：int ip change to InetAddress
+	 * */
 	public static InetAddress intToInet(int value) {
+		// 32bits
 		byte[] bytes = new byte[4];
+		// int change to byte[4]
 		for(int i = 0; i<4; i++) {
 			bytes[i] = byteOfInt(value, i);
 		}

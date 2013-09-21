@@ -24,6 +24,9 @@ import java.net.UnknownHostException;
 
 import android.util.Log;
 
+/**
+ * 职责：对ftp中的“PORT”进行处理
+ * */
 public class CmdPORT extends FtpCmd implements Runnable {
 	//public static final String message = "TEMPLATE!!";
 	String input;

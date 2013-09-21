@@ -23,8 +23,19 @@ import java.io.File;
 
 import android.content.Context;
 
+/**
+ * 职责：存放
+ * 1.Context context
+ * 2.String lastError 代表错误的TAG，在Log中为Error或Warn的
+ * 3.File chrootDir
+ * 4.ProxyConnector proxyConnetor
+ * 5.String username
+ * */
 public class Globals {
     private static Context context;
+    /**
+     * 存放错误TAG，在Log中为Error或Warn的
+     * */
     private static String lastError;
     private static File chrootDir = new File(Defaults.chrootDir);
     private static ProxyConnector proxyConnector = null;

@@ -52,6 +52,9 @@ import org.swiftp.UiUpdater;
 import org.swiftp.Util;
 import net.micode.fileexplorer.R;
 
+/**
+ * 职责：
+ * */
 public class FTPServerService extends Service implements Runnable {
     protected static Thread serverThread = null;
 
@@ -104,6 +107,9 @@ public class FTPServerService extends Service implements Runnable {
 
     PowerManager.WakeLock wakeLock;
 
+    /**
+     * 注册BroadcastReceiver来kill自己
+     * */
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -147,10 +153,12 @@ public class FTPServerService extends Service implements Runnable {
         int attempts = 10;
         // The previous server thread may still be cleaning up, wait for it
         // to finish.
+        // 10s block at most
         while (serverThread != null) {
             myLog.l(Log.WARN, "Won't start, server thread exists");
             if (attempts > 0) {
                 attempts--;
+                // current thread block 1s
                 Util.sleepIgnoreInterupt(1000);
             } else {
                 myLog.l(Log.ERROR, "Server thread already exists");
@@ -164,6 +172,9 @@ public class FTPServerService extends Service implements Runnable {
         // todo: we should broadcast an intent to inform anyone who cares
     }
 
+    /**
+     * 作用：返回服务线程是否开启，并添加信息到Log
+     * */
     public static boolean isRunning() {
         // return true if and only if a server Thread is running
         if (serverThread == null) {
@@ -218,6 +229,9 @@ public class FTPServerService extends Service implements Runnable {
         myLog.d("FTPServerService.onDestroy() finished");
     }
 
+    /**
+     * 只会返回true,顺便设置了各种参数
+     * */
     private boolean loadSettings() {
         myLog.l(Log.DEBUG, "Loading settings");
         settings = getSharedPreferences(Defaults.getSettingsName(), Defaults.getSettingsMode());
@@ -237,18 +251,21 @@ public class FTPServerService extends Service implements Runnable {
 
     // This opens a listening socket on all interfaces.
     void setupListener() throws IOException {
-        listenSocket = new ServerSocket();
+        // 在port上开启监听Socket
+    	listenSocket = new ServerSocket();
         listenSocket.setReuseAddress(true);
         listenSocket.bind(new InetSocketAddress(port));
     }
 
-    private void setupNotification() {
+    @SuppressWarnings("deprecation")
+	private void setupNotification() {
         // http://developer.android.com/guide/topics/ui/notifiers/notifications.html
 
         // Instantiate a Notification
         int icon = R.drawable.notification;
         CharSequence tickerText = getString(R.string.notif_server_starting);
         long when = System.currentTimeMillis();
+        // TODO 以后有时间来重构
         Notification notification = new Notification(icon, tickerText, when);
 
         // Define Notification's message and Intent
@@ -266,6 +283,7 @@ public class FTPServerService extends Service implements Runnable {
         notification.setLatestEventInfo(getApplicationContext(), contentTitle, contentText, contentIntent);
         notification.flags |= Notification.FLAG_ONGOING_EVENT;
 
+        // 设置为前台Service并提示notification,123453??? TODO
         startForeground(123453, notification);
 
         myLog.d("Notication setup done");
@@ -278,6 +296,7 @@ public class FTPServerService extends Service implements Runnable {
 
     private boolean safeSetupListener() {
         try {
+        	// 开启监听Socket
             setupListener();
         } catch (IOException e) {
             myLog.l(Log.WARN, "Error opening port, check your network connection.");
@@ -310,8 +329,10 @@ public class FTPServerService extends Service implements Runnable {
             // socket
             int maxTry = 10;
             int atmp = 0;
+            // 开启端口监听
             while (!safeSetupListener() && ++atmp < maxTry) {
-                port += 1;
+                // 端口被占用，换个port试下
+            	port += 1;
             }
 
             if (atmp >= maxTry) {
@@ -319,23 +340,29 @@ public class FTPServerService extends Service implements Runnable {
                 cleanupAndStopService();
                 return;
             }
+            // 获取WifiLock锁，避免Wifi进入休眠
             takeWifiLock();
         }
+        // 获取WakeLock，避免系统进行休眠
         takeWakeLock();
 
         myLog.l(Log.INFO, "SwiFTP server ready");
+        // 设置Notification
         setupNotification();
 
         // We should update the UI now that we have a socket open, so the UI
         // can present the URL
         UiUpdater.updateClients();
 
+        // 主循环
         while (!shouldExit) {
+        	// 1.有Wifi
             if (acceptWifi) {
                 if (wifiListener != null) {
                     if (!wifiListener.isAlive()) {
                         myLog.l(Log.DEBUG, "Joining crashed wifiListener thread");
                         try {
+                        	// !!
                             wifiListener.join();
                         } catch (InterruptedException e) {
                         }
@@ -350,6 +377,7 @@ public class FTPServerService extends Service implements Runnable {
                     wifiListener.start();
                 }
             }
+            // 2.有net ??
             if (acceptNet) {
                 if (proxyConnector != null) {
                     if (!proxyConnector.isAlive()) {
@@ -482,6 +510,9 @@ public class FTPServerService extends Service implements Runnable {
         }
     }
 
+    /**
+     * 通过WifiManager获取WifiLock，避免进入休眠状态
+     * */
     private void takeWifiLock() {
         myLog.d("Taking wifi lock");
         if (wifiLock == null) {
@@ -515,12 +546,15 @@ public class FTPServerService extends Service implements Runnable {
         if (myContext == null) {
             throw new NullPointerException("Global context is null");
         }
+        // get InetAddress
         WifiManager wifiMgr = (WifiManager) myContext.getSystemService(Context.WIFI_SERVICE);
         if (isWifiEnabled()) {
+        	// get ip of int
             int ipAsInt = wifiMgr.getConnectionInfo().getIpAddress();
             if (ipAsInt == 0) {
                 return null;
             } else {
+            	// return InetAddress
                 return Util.intToInet(ipAsInt);
             }
         } else {
@@ -535,7 +569,8 @@ public class FTPServerService extends Service implements Runnable {
         }
         WifiManager wifiMgr = (WifiManager) myContext.getSystemService(Context.WIFI_SERVICE);
         if (wifiMgr.getWifiState() == WifiManager.WIFI_STATE_ENABLED) {
-            ConnectivityManager connManager = (ConnectivityManager) myContext
+            // 获取Wifi连接信息
+        	ConnectivityManager connManager = (ConnectivityManager) myContext
                     .getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo wifiInfo = connManager
                     .getNetworkInfo(ConnectivityManager.TYPE_WIFI);
@@ -553,6 +588,9 @@ public class FTPServerService extends Service implements Runnable {
         return new ArrayList<String>(serverLog);
     }
 
+    /**
+     * 添加Log
+     * */
     public static void log(int msgLevel, String s) {
         serverLog.add(s);
         int maxSize = Defaults.getServerLogScrollBack();
@@ -566,6 +604,7 @@ public class FTPServerService extends Service implements Runnable {
         UiUpdater.updateClients();
     }
 
+    /** 囧 */
     public static void writeMonitor(boolean incoming, String s) {
     }
 

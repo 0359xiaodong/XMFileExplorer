@@ -30,6 +30,10 @@ public abstract class FtpCmd implements Runnable {
 	protected MyLog myLog;
 	protected static MyLog staticLog = new MyLog(FtpCmd.class.toString());
 	
+	/**
+	 * 静态工厂方法，根据cmd，构建相应FtpCmd
+	 * 注意，对于每一个ftp命令都有一个对应的子类
+	 * */
 	private static FtpCmd getCmd(String cmd, SessionThread sessionThread, String input) {
 		if ("SYST".equals(cmd))
 			return new CmdSYST(sessionThread, input);
@@ -119,9 +123,10 @@ public abstract class FtpCmd implements Runnable {
 			session.writeString(unrecognizedCmdMsg);
 			return;
 		}
-
+		// verb是个传输head
 		verb = verb.trim();
 		verb = verb.toUpperCase();
+		// 输入的操作封装在FtpCmd中
 		FtpCmd cmdInstance = getCmd(verb, session, inputString);
 
 		if(cmdInstance == null) {
@@ -176,6 +181,9 @@ public abstract class FtpCmd implements Runnable {
 		return getParameter(input, false);
 	}
 
+	/**
+	 * 作用：在chroot下创建文件
+	 * */
 	public static File inputPathToChrootedFile(File existingPrefix, String param) {
 		try {
 			if(param.charAt(0) == '/') {

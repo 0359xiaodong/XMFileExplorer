@@ -23,6 +23,9 @@ import net.micode.fileexplorer.FTPServerService;
 
 import android.util.Log;
 
+/**
+ * 职责：引用android.util.log，自己处理Log
+ * */
 public class MyLog {
 	protected String tag;
 	
@@ -37,9 +40,11 @@ public class MyLog {
 			if(level == Log.ERROR || level == Log.WARN) {
 				Globals.setLastError(str);
 			}
+			// 高于默认Log等级，打印出来
 			if(level >= Defaults.getConsoleLogLevel()) {
 				Log.println(level,tag, str);
 			}
+			// Android下的记录的Log
 			if(!sysOnly) { // some messages only go to the Android log
 				if(level >= Defaults.getUiLogLevel()) {
 					FTPServerService.log(level, str);

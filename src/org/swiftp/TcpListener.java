@@ -26,8 +26,11 @@ import java.net.Socket;
 
 import android.util.Log;
 
+/**
+ * 职责：ServerSocket的后台线程类
+ * */
 public class TcpListener extends Thread {
-	ServerSocket listenSocket;
+	ServerSocket listenSocket;  /*默认在port=2121上监听*/
 	FTPServerService ftpServerService;
 	MyLog myLog = new MyLog(getClass().getName());
 	
@@ -48,9 +51,10 @@ public class TcpListener extends Thread {
 	public void run() {
 		try {
 			while(true) {
-				
+				// accept client
 				Socket clientSocket = listenSocket.accept();
 				myLog.l(Log.INFO, "New connection, spawned thread");
+				// 
 				SessionThread newSession = new SessionThread(clientSocket,
 						new NormalDataSocketFactory(), 
 						SessionThread.Source.LOCAL);

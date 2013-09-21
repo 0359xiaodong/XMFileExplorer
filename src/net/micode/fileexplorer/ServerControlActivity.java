@@ -111,12 +111,14 @@ public class ServerControlActivity extends Fragment implements IBackPressedListe
         startStopButton.setOnClickListener(startStopListener);
 
         updateUi();
+        // 添加handler
         UiUpdater.registerClient(handler);
         
         // quickly turn on or off wifi.
         mRootView.findViewById(R.id.wifi_state_image).setOnClickListener(
                 new OnClickListener() {
                     public void onClick(View v) {
+                    	// 进入系统的Wifi设置Activity
                         Intent intent = new Intent(
                                 android.provider.Settings.ACTION_WIFI_SETTINGS);
                         startActivity(intent);
@@ -184,6 +186,7 @@ public class ServerControlActivity extends Fragment implements IBackPressedListe
     public void updateUi() {
         myLog.l(Log.DEBUG, "Updating UI", true);
 
+        // 初始化Wifi信息
         WifiManager wifiMgr = (WifiManager) mActivity.getSystemService(Context.WIFI_SERVICE);
         int wifiState = wifiMgr.getWifiState();
         WifiInfo info = wifiMgr.getConnectionInfo();
@@ -194,6 +197,7 @@ public class ServerControlActivity extends Fragment implements IBackPressedListe
         ImageView wifiImg = (ImageView) mRootView.findViewById(R.id.wifi_state_image);
         wifiImg.setImageResource(isWifiReady ? R.drawable.wifi_state4 : R.drawable.wifi_state0);
 
+        // 获取ip和port
         boolean running = FTPServerService.isRunning();
         if (running) {
             myLog.l(Log.DEBUG, "updateUi: server is running", true);
@@ -213,6 +217,7 @@ public class ServerControlActivity extends Fragment implements IBackPressedListe
             }
         }
 
+        // 设置View
         startStopButton.setEnabled(isWifiReady);
         TextView startStopButtonText = (TextView) mRootView.findViewById(R.id.start_stop_button_text);
         if (isWifiReady) {
@@ -243,9 +248,16 @@ public class ServerControlActivity extends Fragment implements IBackPressedListe
         tv.setText(text);
     }
 
+	/**
+	 * 1.设置Globals.chrootDir
+	 * 2.判断外存是否可用
+	 * 3.启动服务
+	 * */
     OnClickListener startStopListener = new OnClickListener() {
         public void onClick(View v) {
+        	
             Globals.setLastError(null);
+            // change root dir
             File chrootDir = new File(Defaults.chrootDir);
             if (!chrootDir.isDirectory())
                 return;
@@ -256,6 +268,7 @@ public class ServerControlActivity extends Fragment implements IBackPressedListe
             Globals.setChrootDir(chrootDir);
             if (!FTPServerService.isRunning()) {
                 warnIfNoExternalStorage();
+                // 启动服务
                 if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
                     context.startService(intent);
                 }
@@ -265,6 +278,9 @@ public class ServerControlActivity extends Fragment implements IBackPressedListe
         }
     };
 
+    /**
+     *	作用： 外存不可用，弹出toast
+     */
     private void warnIfNoExternalStorage() {
         String storageState = Environment.getExternalStorageState();
         if (!storageState.equals(Environment.MEDIA_MOUNTED)) {

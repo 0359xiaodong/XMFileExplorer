@@ -22,12 +22,24 @@ package org.swiftp;
 import android.content.Context;
 import android.util.Log;
 
+/**
+ * 职责：保存一些默认设置，如端口号等
+ * */
 public class Defaults {
 	protected static int inputBufferSize = 256;
+	/**
+	 * 64K
+	 * */
 	protected static int dataChunkSize = 65536;  // do file I/O in 64k chunks 
 	protected static int sessionMonitorScrollBack = 10;
 	protected static int serverLogScrollBack = 10;
+	/**
+	 * UI care的Log等级
+	 * */
 	protected static int uiLogLevel = Defaults.release ? Log.INFO : Log.DEBUG;
+	/**
+	 *	控制台care的Log等级
+	 * */
 	protected static int consoleLogLevel = Defaults.release ? Log.INFO : Log.DEBUG;
 	protected static String settingsName = "SwiFTP";
 	//protected static String username = "user";

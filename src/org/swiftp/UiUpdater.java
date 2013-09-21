@@ -24,6 +24,9 @@ import java.util.List;
 
 import android.os.Handler;
 
+/**
+ * 职责：持有Clients的Handler列表
+ * */
 public class UiUpdater {
 	protected static MyLog myLog = new MyLog("UiUpdater");
 	protected static List<Handler> clients = new ArrayList<Handler>();

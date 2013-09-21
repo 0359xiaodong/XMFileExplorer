@@ -248,7 +248,7 @@ public class SessionThread extends Thread {
     static int numNulls = 0;
     public void run() {
         myLog.l(Log.INFO, "SessionThread started");
-
+        
         if(sendWelcomeBanner) {
             writeString("220 SwiFTP " + Util.getVersion() + " ready\r\n");
         }
@@ -296,6 +296,9 @@ public class SessionThread extends Thread {
         } catch (IOException e) {}
     }
 
+    /**
+     * 通过Socket建立输出流，输出bytes
+     * */
     public void writeBytes(byte[] bytes) {
         try {
             // TODO: do we really want to do all of this on each write? Why?
@@ -303,6 +306,7 @@ public class SessionThread extends Thread {
                     .getOutputStream(), Defaults.dataChunkSize);
             out.write(bytes);
             out.flush();
+            // 统计传输byte的总长度
             dataSocketFactory.reportTraffic(bytes.length);
         } catch (IOException e) {
             myLog.l(Log.INFO, "Exception writing socket");
@@ -311,6 +315,9 @@ public class SessionThread extends Thread {
         }
     }
 
+    /**
+     * writeString --> writeBytes
+     * */
     public void writeString(String str) {
         FTPServerService.writeMonitor(false, str);
         byte[] strBytes;

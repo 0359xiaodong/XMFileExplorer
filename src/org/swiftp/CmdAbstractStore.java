@@ -39,6 +39,10 @@ abstract public class CmdAbstractStore extends FtpCmd {
 		super(sessionThread, CmdAbstractStore.class.toString());
 	}
 	
+	/**
+	 * 作用：实现用覆盖方式上传一个文件到服务器
+	 * 注意：这等于是自己实现了FTP协议
+	 * */
 	public void doStorOrAppe(String param, boolean append) {
 		myLog.l(Log.DEBUG, "STOR/APPE executing with append=" + append);
 		File storeFile = inputPathToChrootedFile(sessionThread.getWorkingDir(), param);
